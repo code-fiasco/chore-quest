@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+
+@theme {
+	--color-quest-bg: var(--cq-bg);
+	--color-quest-surface: var(--cq-surface);
+	--color-quest-surface-2: var(--cq-surface-2);
+	--color-quest-border: var(--cq-border);
+	--color-quest-purple: var(--cq-purple);
+	--color-quest-purple-light: var(--cq-purple-light);
+	--color-quest-gold: var(--cq-gold);
+	--color-quest-gold-light: var(--cq-gold-light);
+	--color-quest-text: var(--cq-text);
+	--color-quest-muted: var(--cq-muted);
+}
+
+:root {
+	--cq-bg: #0c0a12;
+	--cq-surface: #161222;
+	--cq-surface-2: #1f1a2e;
+	--cq-border: #2d2640;
+	--cq-purple: #7c3aed;
+	--cq-purple-light: #a78bfa;
+	--cq-gold: #f59e0b;
+	--cq-gold-light: #fcd34d;
+	--cq-text: #f3f0ff;
+	--cq-muted: #9b8ec4;
+}
+
+html {
+	@apply bg-quest-bg text-quest-text antialiased;
+}
+
+body {
+	min-height: 100dvh;
+}
+
+.page-enter {
+	animation: page-in 0.25s ease-out;
+}
+
+@keyframes page-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}

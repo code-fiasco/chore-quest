@@ -1,0 +1,14 @@
+Chore Quest — Daily Summary
+{{ household_name }} · {{ date_label }}
+
+{% if winner %}{{ winner.display_name }} is winning today with {{ winner.daily_score }} pts!{% else %}No points scored yet today.{% endif %}
+
+{% for member in members %}
+---
+{{ member.display_name }} ({{ member.avatar }})
+Score: {{ member.daily_score }} pts
+Streak: {{ member.streak }} day{% if member.streak != 1 %}s{% endif %}
+{% if member.tasks_completed %}Completed: {{ member.tasks_completed | join(', ') }}{% else %}No tasks completed today.{% endif %}
+{% endfor %}
+
+Open Chore Quest: {{ frontend_url }}

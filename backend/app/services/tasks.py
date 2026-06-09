@@ -135,12 +135,23 @@ def _user_instance_status(
 
 
 def instance_to_dict(instance: TaskInstance, user: User, db: Session) -> dict:
+    completed_by = None
+    if instance.completed_by_id is not None:
+        completer = db.get(User, instance.completed_by_id)
+        if completer is not None:
+            completed_by = {
+                "id": completer.id,
+                "display_name": completer.display_name,
+                "avatar": completer.avatar,
+            }
+
     return {
         "id": instance.id,
         "period_start": instance.period_start.isoformat(),
         "period_end": instance.period_end.isoformat(),
         "is_locked": instance.is_locked,
         "completed_by_id": instance.completed_by_id,
+        "completed_by": completed_by,
         "completed_at": instance.completed_at.isoformat() if instance.completed_at else None,
         "user_status": _user_instance_status(db, user, instance),
     }
@@ -163,9 +174,13 @@ def task_to_dict(task: Task, instance: TaskInstance, user: User, db: Session) ->
 
 
 def list_tasks_grouped(db: Session, user: User) -> dict:
+    from app.services.challenges import ensure_today_challenge_ids
+
     household = db.get(Household, user.household_id)
     if household is None:
         raise TaskError("Household not found", status_code=404)
+
+    challenge_task_ids = ensure_today_challenge_ids(db, household)
 
     tasks = db.scalars(
         select(Task)
@@ -176,6 +191,8 @@ def list_tasks_grouped(db: Session, user: User) -> dict:
 
     grouped: dict[str, list] = {"daily": [], "weekly": [], "monthly": []}
     for task in tasks:
+        if task.id in challenge_task_ids:
+            continue
         instance = ensure_current_instance(db, task, household)
         grouped[task.frequency.value].append(task_to_dict(task, instance, user, db))
 

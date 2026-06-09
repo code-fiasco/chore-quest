@@ -1,7 +1,5 @@
 import re
-import smtplib
 from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -9,6 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.services.email import send_email
 from app.models.household import Household
 from app.models.user import User, UserRole
 from app.seed import ensure_default_categories
@@ -166,6 +165,12 @@ def register_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    if user_count == 0:
+        from app.scheduler import schedule_household_jobs
+
+        schedule_household_jobs(household)
+
     return user
 
 
@@ -213,19 +218,33 @@ def confirm_password_reset(db: Session, token: str, new_password: str) -> None:
 
 
 def _send_password_reset_email(to_email: str, reset_url: str) -> None:
-    message = EmailMessage()
-    message["Subject"] = "Chore Quest – Password Reset"
-    message["From"] = "noreply@chorequest.local"
-    message["To"] = to_email
-    message.set_content(
+    text = (
         "You requested a password reset for Chore Quest.\n\n"
         f"Reset your password using this link (valid for {RESET_TOKEN_EXPIRE_HOURS} hour):\n"
         f"{reset_url}\n\n"
         "If you did not request this, you can ignore this email."
     )
+    html = (
+        "<p>You requested a password reset for Chore Quest.</p>"
+        f"<p><a href=\"{reset_url}\">Reset your password</a> "
+        f"(valid for {RESET_TOKEN_EXPIRE_HOURS} hour).</p>"
+        "<p>If you did not request this, you can ignore this email.</p>"
+    )
+    send_email(
+        to=to_email,
+        subject="Chore Quest – Password Reset",
+        html_body=html,
+        text_body=text,
+    )
 
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:
-        smtp.send_message(message)
+
+def update_user_profile(db: Session, user: User, *, avatar: str | None = None) -> User:
+    if avatar is not None:
+        validate_avatar(avatar)
+        user.avatar = avatar
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 def user_to_dict(user: User) -> dict:

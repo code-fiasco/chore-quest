@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.household import Household
 from app.models.task import Completion, Task, TaskInstance
 from app.models.user import User
+from app.services.challenges import challenge_bonus_for_completion, ensure_today_challenge_ids
 from app.services.streaks import (
     calculate_current_streak,
     completion_local_date,
@@ -228,7 +229,16 @@ def recalculate_user_scores(db: Session, user: User, household: Household) -> No
             ):
                 category_bonus = int(base * 0.3)
 
-            record.completion.points_awarded = base + room_bonus + category_bonus
+            challenge_bonus = challenge_bonus_for_completion(
+                db,
+                household.id,
+                record.task.id,
+                day,
+                base,
+            )
+            record.completion.points_awarded = (
+                base + room_bonus + category_bonus + challenge_bonus
+            )
 
 
 def _sum_completion_points(
@@ -266,10 +276,14 @@ def _extras_for_range(
 
 
 def build_score_breakdown(
-    db: Session, user: User, household: Household
+    db: Session,
+    user: User,
+    household: Household,
+    *,
+    as_of: datetime.date | None = None,
 ) -> dict:
     records = _load_active_completions(db, user, household)
-    today = household_today(household)
+    today = as_of or household_today(household)
     week_start = _week_start(today)
     week_end = week_start + datetime.timedelta(days=6)
     month_start = _month_start(today)
@@ -319,6 +333,7 @@ def build_score_breakdown(
     def period_score(start: datetime.date, end: datetime.date, weekly: bool) -> dict:
         in_period = [r for r in records if start <= r.local_date <= end]
         base = sum(r.task.base_points for r in in_period)
+        completion_points = sum(r.completion.points_awarded for r in in_period)
         room_bonus = 0
         category_bonus = 0
         for day, day_records in by_day.items():
@@ -348,13 +363,22 @@ def build_score_breakdown(
         extras.base_points = base
         extras.room_sweep_bonus = room_bonus
         extras.category_sweep_bonus = category_bonus
+        challenge_bonus = max(
+            0, completion_points - base - room_bonus - category_bonus
+        )
+        non_completion_extras = (
+            extras.deep_clean_bonus
+            + extras.streak_milestone_bonus
+            + (extras.weekly_goal_bonus if weekly else 0)
+        )
 
         return {
-            "total": extras.total,
+            "total": completion_points + non_completion_extras,
             "base_points": extras.base_points,
             "bonuses": {
                 "room_sweep": extras.room_sweep_bonus,
                 "category_sweep": extras.category_sweep_bonus,
+                "challenge": challenge_bonus,
                 "deep_clean": extras.deep_clean_bonus,
                 "weekly_goal": extras.weekly_goal_bonus,
                 "streak_milestone": extras.streak_milestone_bonus,
@@ -441,7 +465,17 @@ def complete_task_instance(
     instance.completed_at = now
 
     db.flush()
+
+    # Challenges must exist before scoring so bonus applies even if the
+    # challenges endpoint was never called today.
+    ensure_today_challenge_ids(db, household)
+
     recalculate_user_scores(db, user, household)
+
+    from app.services.badges import check_and_award_badges
+
+    new_badges = check_and_award_badges(db, user, household, completion)
+
     db.commit()
     db.refresh(completion)
 
@@ -450,6 +484,7 @@ def complete_task_instance(
         "task_instance_id": instance.id,
         "points_awarded": completion.points_awarded,
         "completed_at": completion.completed_at.isoformat(),
+        "badges_earned": new_badges,
         "scores": build_score_breakdown(db, user, household),
     }
 
@@ -479,6 +514,7 @@ def undo_task_instance(db: Session, user: User, task_instance_id: int) -> dict:
         instance.completed_by_id = None
         instance.completed_at = None
 
+    ensure_today_challenge_ids(db, household)
     recalculate_user_scores(db, user, household)
     db.commit()
 

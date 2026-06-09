@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Chore Quest{% endblock %}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0c0a12;font-family:Arial,Helvetica,sans-serif;color:#f3f0ff;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0c0a12;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background-color:#161222;border:1px solid #2d2640;border-radius:16px;overflow:hidden;">
+          <tr>
+            <td style="padding:24px 24px 12px;text-align:center;background:linear-gradient(135deg,#7c3aed 0%,#1f1a2e 100%);">
+              <h1 style="margin:0;font-size:24px;color:#fcd34d;">⚔️ Chore Quest</h1>
+              <p style="margin:8px 0 0;font-size:13px;color:#e9d5ff;">{% block subtitle %}{% endblock %}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px;">
+              {% block content %}{% endblock %}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 24px 24px;text-align:center;border-top:1px solid #2d2640;">
+              <a href="{{ frontend_url }}" style="color:#a78bfa;text-decoration:none;font-size:14px;">Open Chore Quest</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -14,12 +14,18 @@ STREAK_MILESTONES = (7, 30, 60, 90)
 def completion_local_date(
     completed_at: datetime.datetime, household: Household
 ) -> datetime.date:
+    return completion_local_datetime(completed_at, household).date()
+
+
+def completion_local_datetime(
+    completed_at: datetime.datetime, household: Household
+) -> datetime.datetime:
     from zoneinfo import ZoneInfo
 
     tz = ZoneInfo(household.timezone)
     if completed_at.tzinfo is None:
         completed_at = completed_at.replace(tzinfo=datetime.timezone.utc)
-    return completed_at.astimezone(tz).date()
+    return completed_at.astimezone(tz)
 
 
 def get_required_completion_dates(

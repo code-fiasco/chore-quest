@@ -5,6 +5,8 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies import get_current_user
+from app.models.user import User
 from app.services.auth import (
     COOKIE_NAME,
     PREDEFINED_AVATARS,
@@ -15,6 +17,7 @@ from app.services.auth import (
     create_session_token,
     register_user,
     request_password_reset,
+    update_user_profile,
     user_to_dict,
 )
 
@@ -46,6 +49,10 @@ class PasswordResetRequest(BaseModel):
 class PasswordResetConfirmRequest(BaseModel):
     token: str = Field(min_length=1)
     new_password: str = Field(min_length=8)
+
+
+class ProfileUpdateRequest(BaseModel):
+    avatar: str = Field(min_length=1, max_length=63)
 
 
 def _set_auth_cookie(response: Response, token: str) -> None:
@@ -114,6 +121,20 @@ def login(
 def logout(response: Response):
     _clear_auth_cookie(response)
     return {"message": "Logged out successfully"}
+
+
+@router.put("/me")
+def update_profile(
+    body: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        user = update_user_profile(db, current_user, avatar=body.avatar)
+    except AuthError as exc:
+        raise _http_error(exc)
+
+    return {"user": user_to_dict(user)}
 
 
 @router.post("/password-reset/request")

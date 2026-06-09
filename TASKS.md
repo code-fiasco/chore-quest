@@ -48,40 +48,40 @@ Legend: ⬜ Not started | 🔄 In progress | ✅ Done
 
 ## Phase 5 – Gamification
 
-- ⬜ **GAME-01** Streak tracking – one required task per day maintains streak
-- ⬜ **GAME-02** Daily challenge generation at 06:00 household timezone (3 tasks selected)
-- ⬜ **GAME-03** Weekly goal configuration (admin) and tracking
-- ⬜ **GAME-04** Badge definitions (visible badges)
-- ⬜ **GAME-05** Secret badge definitions
-- ⬜ **GAME-06** Badge award logic and triggers
-- ⬜ **GAME-07** Leaderboard snapshots – weekly, monthly, lifetime
+- ✅ **GAME-01** Streak tracking – one required task per day maintains streak
+- ✅ **GAME-02** Daily challenge generation at 06:00 household timezone (3 tasks selected)
+- ✅ **GAME-03** Weekly goal configuration (admin) and tracking
+- ✅ **GAME-04** Badge definitions (visible badges)
+- ✅ **GAME-05** Secret badge definitions
+- ✅ **GAME-06** Badge award logic and triggers
+- ✅ **GAME-07** Leaderboard snapshots – weekly, monthly, lifetime
 
 ## Phase 6 – Frontend (SvelteKit)
 
-- ⬜ **FE-01** SvelteKit project init inside /frontend
-- ⬜ **FE-02** API client setup (fetch wrapper pointing to backend)
-- ⬜ **FE-03** Auth pages: Register, Login, Password Reset
-- ⬜ **FE-04** Home/dashboard: today's tasks (daily/weekly/monthly sections)
-- ⬜ **FE-05** Task completion UI with undo
-- ⬜ **FE-06** Daily challenges widget
-- ⬜ **FE-07** Leaderboard page
-- ⬜ **FE-08** Badges page
-- ⬜ **FE-09** Statistics page
-- ⬜ **FE-10** Admin panel: task/category management, weekly goals, master reset
-- ⬜ **FE-11** PWA manifest and service worker
+- ✅ **FE-01** SvelteKit project init inside /frontend
+- ✅ **FE-02** API client setup (fetch wrapper pointing to backend)
+- ✅ **FE-03** Auth pages: Register, Login, Password Reset
+- ✅ **FE-04** Home/dashboard: today's tasks (daily/weekly/monthly sections)
+- ✅ **FE-05** Task completion UI with undo
+- ✅ **FE-06** Daily challenges widget
+- ✅ **FE-07** Leaderboard page
+- ✅ **FE-08** Badges page
+- ✅ **FE-09** Statistics page
+- ✅ **FE-10** Admin panel: task/category management, weekly goals, master reset
+- ✅ **FE-11** PWA manifest and service worker
 
 ## Phase 7 – Email
 
-- ⬜ **EMAIL-01** Email service abstraction (local: MailHog SMTP, prod: Resend API)
-- ⬜ **EMAIL-02** Daily summary email template (22:00)
-- ⬜ **EMAIL-03** Weekly summary email template (Monday 08:00)
-- ⬜ **EMAIL-04** APScheduler jobs for both emails, timezone-aware
+- ✅ **EMAIL-01** Email service abstraction (local: MailHog SMTP, prod: Resend API)
+- ✅ **EMAIL-02** Daily summary email template (22:00)
+- ✅ **EMAIL-03** Weekly summary email template (Monday 08:00)
+- ✅ **EMAIL-04** APScheduler jobs for both emails, timezone-aware
 
 ## Phase 8 – Polish & Deployment Prep
 
-- ⬜ **OPS-01** docker-compose.prod.yml overrides (no MailHog, env vars for Cloud)
-- ⬜ **OPS-02** Environment-based config switching (local vs prod)
-- ⬜ **OPS-03** Production Dockerfile for frontend (static build + Nginx)
+- ✅ **OPS-01** docker-compose.prod.yml overrides (no MailHog, env vars for Cloud)
+- ✅ **OPS-02** Environment-based config switching (local vs prod)
+- ✅ **OPS-03** Production Dockerfile for frontend (static build + Nginx)
 - ⬜ **OPS-04** Cloud SQL connection instructions
 - ⬜ **OPS-05** Cloud Run deployment notes
 

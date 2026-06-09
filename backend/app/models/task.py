@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 if TYPE_CHECKING:
+    from app.models.gamification import DailyChallenge
     from app.models.household import Category, Household
     from app.models.user import User
 
@@ -51,6 +52,9 @@ class Task(Base):
     category: Mapped["Category"] = relationship(back_populates="tasks")
     household: Mapped["Household"] = relationship(back_populates="tasks")
     instances: Mapped[list["TaskInstance"]] = relationship(back_populates="task")
+    daily_challenges: Mapped[list["DailyChallenge"]] = relationship(
+        back_populates="task"
+    )
 
 
 class TaskInstance(Base):

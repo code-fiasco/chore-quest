@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Weekly Round Up — Chore Quest{% endblock %}
+{% block subtitle %}{{ household_name }} · Week of {{ week_label }}{% endblock %}
+{% block content %}
+<h2 style="margin:0 0 16px;font-size:18px;color:#fcd34d;">Weekly results</h2>
+
+{% if winner %}
+<p style="margin:0 0 20px;padding:12px 16px;background-color:#1f1a2e;border-left:4px solid #f59e0b;border-radius:8px;color:#f3f0ff;">
+  🏆 <strong>{{ winner.display_name }}</strong> won the week with <strong>{{ winner.weekly_score }} pts</strong>!
+</p>
+{% else %}
+<p style="margin:0 0 20px;color:#9b8ec4;">A quiet week — here's where you stand.</p>
+{% endif %}
+
+{% for member in members %}
+<div style="margin-bottom:12px;padding:14px 16px;background-color:#1f1a2e;border:1px solid #2d2640;border-radius:12px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+      <td><strong style="color:#f3f0ff;">{{ member.display_name }}</strong></td>
+      <td align="right" style="font-weight:bold;color:#f59e0b;">{{ member.weekly_score }} pts</td>
+    </tr>
+  </table>
+  <p style="margin:8px 0 0;font-size:13px;color:#9b8ec4;">🔥 Current streak: {{ member.streak }} day{% if member.streak != 1 %}s{% endif %}</p>
+</div>
+{% endfor %}
+
+<h3 style="margin:24px 0 12px;font-size:16px;color:#a78bfa;">Badges earned this week</h3>
+{% if badges_earned %}
+<ul style="margin:0;padding-left:20px;color:#f3f0ff;">
+  {% for badge in badges_earned %}
+  <li style="margin-bottom:6px;">{{ badge.display_name }} — {{ badge.badge_name }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p style="margin:0;color:#9b8ec4;">No new badges this week. Keep questing!</p>
+{% endif %}
+
+<h3 style="margin:24px 0 12px;font-size:16px;color:#a78bfa;">⚡ Today's daily challenges</h3>
+{% if challenge_preview %}
+<ul style="margin:0;padding-left:20px;color:#fcd34d;">
+  {% for task in challenge_preview %}
+  <li style="margin-bottom:6px;">{{ task }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p style="margin:0;color:#9b8ec4;">Challenges will appear once tasks are set up.</p>
+{% endif %}
+{% endblock %}

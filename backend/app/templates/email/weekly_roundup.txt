@@ -1,0 +1,21 @@
+Chore Quest — Weekly Round Up
+{{ household_name }} · Week of {{ week_label }}
+
+{% if winner %}{{ winner.display_name }} won the week with {{ winner.weekly_score }} pts!{% endif %}
+
+Scores:
+{% for member in members %}
+- {{ member.display_name }}: {{ member.weekly_score }} pts (streak: {{ member.streak }})
+{% endfor %}
+
+Badges earned this week:
+{% if badges_earned %}{% for badge in badges_earned %}
+- {{ badge.display_name }}: {{ badge.badge_name }}{% endfor %}{% else %}
+- None{% endif %}
+
+Today's daily challenges:
+{% if challenge_preview %}{% for task in challenge_preview %}
+- {{ task }}{% endfor %}{% else %}
+- None yet{% endif %}
+
+Open Chore Quest: {{ frontend_url }}
