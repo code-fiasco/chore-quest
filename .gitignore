@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.svelte-kit/
+build/
+dist/
+*.egg-info/
+.DS_Store
