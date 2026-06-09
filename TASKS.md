@@ -16,35 +16,35 @@ Legend: ⬜ Not started | 🔄 In progress | ✅ Done
 
 ## Phase 2 – Authentication
 
-- ⬜ **AUTH-01** POST /auth/register – create user, first user becomes admin, create household
-- ⬜ **AUTH-02** POST /auth/login – return JWT session token
-- ⬜ **AUTH-03** POST /auth/logout
-- ⬜ **AUTH-04** POST /auth/password-reset/request – send reset email
-- ⬜ **AUTH-05** POST /auth/password-reset/confirm – apply new password
-- ⬜ **AUTH-06** get_current_user dependency for protected routes
-- ⬜ **AUTH-07** Avatar selection from predefined list (e.g. Tiger, Kitten, etc.)
+- ✅ **AUTH-01** POST /auth/register – create user, first user becomes admin, create household
+- ✅ **AUTH-02** POST /auth/login – return JWT session token
+- ✅ **AUTH-03** POST /auth/logout
+- ✅ **AUTH-04** POST /auth/password-reset/request – send reset email
+- ✅ **AUTH-05** POST /auth/password-reset/confirm – apply new password
+- ✅ **AUTH-06** get_current_user dependency for protected routes
+- ✅ **AUTH-07** Avatar selection from predefined list (e.g. Tiger, Kitten, etc.)
 
 ## Phase 3 – Task Management (Admin)
 
-- ⬜ **TASK-01** GET /tasks – list all tasks for household
-- ⬜ **TASK-02** POST /tasks – create task (admin only)
-- ⬜ **TASK-03** PUT /tasks/{id} – edit task (admin only)
-- ⬜ **TASK-04** DELETE /tasks/{id} – delete task (admin only)
-- ⬜ **TASK-05** Task instance generation logic – daily/weekly/monthly scheduling
-- ⬜ **TASK-06** Monthly task distribution across 4 weeks
-- ⬜ **TASK-07** Category CRUD (admin only)
+- ✅ **TASK-01** GET /tasks – list all tasks for household
+- ✅ **TASK-02** POST /tasks – create task (admin only)
+- ✅ **TASK-03** PUT /tasks/{id} – edit task (admin only)
+- ✅ **TASK-04** DELETE /tasks/{id} – delete task (admin only)
+- ✅ **TASK-05** Task instance generation logic – daily/weekly/monthly scheduling
+- ✅ **TASK-06** Monthly task distribution across 4 weeks
+- ✅ **TASK-07** Category CRUD (admin only)
 
 ## Phase 4 – Completion & Scoring
 
-- ⬜ **SCORE-01** POST /tasks/{id}/complete – first-completion-wins, lock instance, award points
-- ⬜ **SCORE-02** POST /tasks/{id}/undo – undo own completion, recalculate all derived data
-- ⬜ **SCORE-03** Points calculation: base 10pts + bonuses
-- ⬜ **SCORE-04** Bonus: room completion sweep
-- ⬜ **SCORE-05** Bonus: category sweep
-- ⬜ **SCORE-06** Bonus: deep clean bonus
-- ⬜ **SCORE-07** Bonus: weekly goal completion
-- ⬜ **SCORE-08** Bonus: streak milestones
-- ⬜ **SCORE-09** Daily / weekly / monthly / lifetime score aggregation
+- ✅ **SCORE-01** POST /tasks/{id}/complete – first-completion-wins, lock instance, award points
+- ✅ **SCORE-02** POST /tasks/{id}/undo – undo own completion, recalculate all derived data
+- ✅ **SCORE-03** Points calculation: base 10pts + bonuses
+- ✅ **SCORE-04** Bonus: room completion sweep
+- ✅ **SCORE-05** Bonus: category sweep
+- ✅ **SCORE-06** Bonus: deep clean bonus
+- ✅ **SCORE-07** Bonus: weekly goal completion
+- ✅ **SCORE-08** Bonus: streak milestones
+- ✅ **SCORE-09** Daily / weekly / monthly / lifetime score aggregation
 
 ## Phase 5 – Gamification
 

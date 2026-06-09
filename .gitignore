@@ -8,3 +8,5 @@ build/
 dist/
 *.egg-info/
 .DS_Store
+scripts/cookies.txt
+cookies.txt
