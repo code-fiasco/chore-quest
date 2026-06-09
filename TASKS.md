@@ -8,11 +8,11 @@ Legend: ⬜ Not started | 🔄 In progress | ✅ Done
 
 ## Phase 1 – Foundation
 
-- ⬜ **DB-01** Create SQLAlchemy models: User, Household (models/user.py, models/household.py)
-- ⬜ **DB-02** Create SQLAlchemy models: Task, TaskInstance, Completion (models/task.py)
-- ⬜ **DB-03** Create SQLAlchemy models: Badge, UserBadge, Leaderboard (models/badge.py, models/leaderboard.py)
-- ⬜ **DB-04** Set up Alembic migrations (alembic.ini, first migration)
-- ⬜ **DB-05** Create database.py with SQLAlchemy engine and get_db dependency
+- ✅ **DB-01** Create SQLAlchemy models: User, Household (models/user.py, models/household.py)
+- ✅ **DB-02** Create SQLAlchemy models: Task, TaskInstance, Completion (models/task.py)
+- ✅ **DB-03** Create SQLAlchemy models: Badge, UserBadge, Leaderboard (models/gamification.py)
+- ✅ **DB-04** Set up Alembic migrations (alembic.ini, first migration)
+- ✅ **DB-05** Create database.py with SQLAlchemy engine and get_db dependency
 
 ## Phase 2 – Authentication
 
