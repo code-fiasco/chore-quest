@@ -40,13 +40,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[settings.frontend_url],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+_cors_kwargs: dict = {
+    "allow_origins": settings.cors_origins,
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+}
+if not settings.is_production:
+    # Allow LAN IP access during local dev (Pi, phone, etc.) without reconfiguring FRONTEND_URL
+    _cors_kwargs["allow_origin_regex"] = (
+        r"https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}):5173"
+    )
+
+app.add_middleware(CORSMiddleware, **_cors_kwargs)
 
 app.include_router(auth_router, prefix="/auth")
 app.include_router(tasks_router, prefix="/tasks")

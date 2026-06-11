@@ -32,4 +32,3 @@ docker compose up --build
 - API: http://localhost:8000
 - API docs: http://localhost:8000/docs
 - Frontend: http://localhost:5173
-- Email preview: http://localhost:8025

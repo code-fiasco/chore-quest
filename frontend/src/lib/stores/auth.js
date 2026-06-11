@@ -46,6 +46,13 @@ function createAuthStore() {
 
 	subscribe((state) => persist(state));
 
+	api.onSessionInvalidated(() => {
+		set({ user: null, token: null });
+		if (browser && !window.location.pathname.startsWith('/login')) {
+			goto('/login', { replaceState: true });
+		}
+	});
+
 	return {
 		subscribe,
 		async login(email, password) {

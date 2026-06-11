@@ -7,7 +7,7 @@ Two-person household chore gamification PWA. Built to run locally via Docker Com
 - **Frontend:** SvelteKit (Vite, served on :5173)
 - **Backend:** FastAPI (Python 3.12, served on :8000)
 - **Database:** PostgreSQL 16
-- **Email (local):** MailHog (SMTP :1025, web UI :8025)
+- **Email:** IONOS SMTP (smtp.ionos.co.uk:587, STARTTLS)
 - **Scheduling:** APScheduler embedded in FastAPI
 
 ## Services (docker-compose.yml)
@@ -16,7 +16,6 @@ Two-person household chore gamification PWA. Built to run locally via Docker Com
 | frontend  | 5173  | SvelteKit dev server           |
 | backend   | 8000  | FastAPI REST API               |
 | db        | 5432  | PostgreSQL                     |
-| mailhog   | 8025  | Email preview (local only)     |
 
 ## Backend Layout
 ```
@@ -54,5 +53,5 @@ To move from local to Google Cloud:
 1. Replace `db` container → Cloud SQL (Postgres)
 2. Replace `backend` container → Cloud Run
 3. Replace `frontend` container → Cloud Run or Firebase Hosting
-4. Replace `mailhog` → Resend or SendGrid
+4. Replace `mailhog` → authenticated SMTP (IONOS or other provider)
 5. Set environment variables in Cloud Run; no application code changes needed

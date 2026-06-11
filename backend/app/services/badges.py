@@ -24,6 +24,7 @@ from app.services.streaks import (
 from app.services.tasks import household_today
 
 BADGE_DEFINITIONS: list[dict] = [
+    # Getting started
     {
         "name": "First Steps",
         "description": "Complete your first task",
@@ -37,11 +38,31 @@ BADGE_DEFINITIONS: list[dict] = [
         "is_secret": False,
     },
     {
-        "name": "Clean Sweep",
-        "description": "Complete all tasks in a room in one day",
-        "icon": "clean_sweep",
+        "name": "Hat Trick Hero",
+        "description": "Complete 3 daily challenges in a single day",
+        "icon": "hat_trick_hero",
         "is_secret": False,
     },
+    # Time of day
+    {
+        "name": "Early Bird",
+        "description": "Complete a task before 8am",
+        "icon": "early_bird",
+        "is_secret": False,
+    },
+    {
+        "name": "Rise and Shine",
+        "description": "Complete a task before 7am",
+        "icon": "rise_and_shine",
+        "is_secret": False,
+    },
+    {
+        "name": "Lunchtime Hero",
+        "description": "Complete 3 tasks between 12pm and 2pm",
+        "icon": "lunchtime_hero",
+        "is_secret": False,
+    },
+    # Streaks
     {
         "name": "Streak Starter",
         "description": "Reach a 7 day streak",
@@ -67,35 +88,18 @@ BADGE_DEFINITIONS: list[dict] = [
         "is_secret": False,
     },
     {
-        "name": "Category King",
-        "description": "Complete all tasks in a category in one day",
-        "icon": "category_king",
+        "name": "Comeback Kid",
+        "description": "Restore a streak after it was broken",
+        "icon": "comeback_kid",
         "is_secret": False,
     },
     {
-        "name": "Overachiever",
-        "description": "Exceed the weekly goal by 50%",
-        "icon": "overachiever",
+        "name": "Consistent",
+        "description": "Complete at least one task every day for a month",
+        "icon": "consistent",
         "is_secret": False,
     },
-    {
-        "name": "Early Bird",
-        "description": "Complete a task before 8am",
-        "icon": "early_bird",
-        "is_secret": False,
-    },
-    {
-        "name": "Rise and Shine",
-        "description": "Complete a task before 7am",
-        "icon": "rise_and_shine",
-        "is_secret": False,
-    },
-    {
-        "name": "Lunchtime Hero",
-        "description": "Complete 3 tasks between 12pm and 2pm",
-        "icon": "lunchtime_hero",
-        "is_secret": False,
-    },
+    # Completion sweeps
     {
         "name": "Daily Devotion",
         "description": "Complete all daily tasks in a single day",
@@ -114,6 +118,19 @@ BADGE_DEFINITIONS: list[dict] = [
         "icon": "monthly_marvel",
         "is_secret": False,
     },
+    {
+        "name": "Clean Sweep",
+        "description": "Complete all tasks in a room in one day",
+        "icon": "clean_sweep",
+        "is_secret": False,
+    },
+    {
+        "name": "Category King",
+        "description": "Complete all tasks in a category in one day",
+        "icon": "category_king",
+        "is_secret": False,
+    },
+    # Lifetime points
     {
         "name": "Point Hoarder",
         "description": "Accumulate 1,000 lifetime points",
@@ -138,6 +155,7 @@ BADGE_DEFINITIONS: list[dict] = [
         "icon": "points_legend",
         "is_secret": False,
     },
+    # Lifetime completions
     {
         "name": "Centurion",
         "description": "Complete 100 tasks lifetime",
@@ -162,18 +180,20 @@ BADGE_DEFINITIONS: list[dict] = [
         "icon": "two_thousand",
         "is_secret": False,
     },
+    # Weekly goals
     {
-        "name": "Comeback Kid",
-        "description": "Restore a streak after it was broken",
-        "icon": "comeback_kid",
+        "name": "Overachiever",
+        "description": "Exceed the weekly goal by 50%",
+        "icon": "overachiever",
         "is_secret": False,
     },
     {
-        "name": "Helping Hand",
-        "description": "Complete a task within 10 minutes of your partner",
-        "icon": "helping_hand",
+        "name": "Overachiever II",
+        "description": "Exceed the weekly goal by 100%",
+        "icon": "overachiever_ii",
         "is_secret": False,
     },
+    # Room and category mastery
     {
         "name": "Room Master: Kitchen",
         "description": "Complete every kitchen task 10 times",
@@ -204,16 +224,11 @@ BADGE_DEFINITIONS: list[dict] = [
         "icon": "laundry_legend",
         "is_secret": False,
     },
+    # Household
     {
-        "name": "Consistent",
-        "description": "Complete at least one task every day for a month",
-        "icon": "consistent",
-        "is_secret": False,
-    },
-    {
-        "name": "Overachiever II",
-        "description": "Exceed the weekly goal by 100%",
-        "icon": "overachiever_ii",
+        "name": "Helping Hand",
+        "description": "Complete a task within 10 minutes of your partner",
+        "icon": "helping_hand",
         "is_secret": False,
     },
     {
@@ -222,16 +237,23 @@ BADGE_DEFINITIONS: list[dict] = [
         "icon": "double_trouble",
         "is_secret": False,
     },
-    {
-        "name": "Hat Trick Hero",
-        "description": "Complete 3 daily challenges in a single day",
-        "icon": "hat_trick_hero",
-        "is_secret": False,
-    },
+    # Secret badges (always listed last)
     {
         "name": "Night Owl",
         "description": "Complete a task after 11pm",
         "icon": "night_owl",
+        "is_secret": True,
+    },
+    {
+        "name": "Insomniac",
+        "description": "Complete a task between 2am and 4am",
+        "icon": "insomniac",
+        "is_secret": True,
+    },
+    {
+        "name": "Speed Runner",
+        "description": "Complete 5 tasks within an hour",
+        "icon": "speed_runner",
         "is_secret": True,
     },
     {
@@ -244,18 +266,6 @@ BADGE_DEFINITIONS: list[dict] = [
         "name": "Perfect Week",
         "description": "Complete all required tasks every day for a week",
         "icon": "perfect_week",
-        "is_secret": True,
-    },
-    {
-        "name": "Speed Runner",
-        "description": "Complete 5 tasks within an hour",
-        "icon": "speed_runner",
-        "is_secret": True,
-    },
-    {
-        "name": "Insomniac",
-        "description": "Complete a task between 2am and 4am",
-        "icon": "insomniac",
         "is_secret": True,
     },
     {
@@ -278,6 +288,8 @@ BADGE_DEFINITIONS: list[dict] = [
     },
 ]
 
+BADGE_DISPLAY_ORDER = {definition["name"]: index for index, definition in enumerate(BADGE_DEFINITIONS)}
+
 VISIBLE_BADGE_NAMES = {d["name"] for d in BADGE_DEFINITIONS if not d["is_secret"]}
 LIFETIME_TASK_MILESTONES = (
     ("Centurion", 100),
@@ -295,7 +307,8 @@ LIFETIME_POINT_MILESTONES = (
 
 def list_user_badges(db: Session, user: User) -> dict:
     ensure_badge_definitions(db, commit=False)
-    badges = db.scalars(select(Badge).order_by(Badge.id)).all()
+    badges = db.scalars(select(Badge)).all()
+    badges.sort(key=lambda badge: BADGE_DISPLAY_ORDER.get(badge.name, len(BADGE_DEFINITIONS)))
     earned_rows = db.scalars(
         select(UserBadge).where(UserBadge.user_id == user.id)
     ).all()

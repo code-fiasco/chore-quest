@@ -152,7 +152,7 @@ def _build_weekly_context(db: Session, household: Household) -> dict:
 def _frontend_url() -> str:
     from app.config import settings
 
-    return settings.frontend_url.rstrip("/")
+    return settings.public_frontend_url
 
 
 def _render_pair(template_base: str, context: dict) -> tuple[str, str]:

@@ -1,5 +1,14 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const TOKEN_KEY = 'cq_token';
+const AUTH_STORAGE_KEY = 'cq_auth';
+
+let sessionInvalidatedCallback = null;
+let invalidatingSession = false;
+
+/** @param {() => void} callback */
+export function onSessionInvalidated(callback) {
+	sessionInvalidatedCallback = callback;
+}
 
 function getToken() {
 	if (typeof localStorage === 'undefined') return null;
@@ -9,10 +18,21 @@ function getToken() {
 export function setApiToken(token) {
 	if (typeof localStorage === 'undefined') return;
 	if (token) {
+		invalidatingSession = false;
 		localStorage.setItem(TOKEN_KEY, token);
 	} else {
 		localStorage.removeItem(TOKEN_KEY);
 	}
+}
+
+function invalidateSession() {
+	if (invalidatingSession) return;
+	invalidatingSession = true;
+	setApiToken(null);
+	if (typeof localStorage !== 'undefined') {
+		localStorage.removeItem(AUTH_STORAGE_KEY);
+	}
+	sessionInvalidatedCallback?.();
 }
 
 async function request(path, options = {}) {
@@ -33,10 +53,7 @@ async function request(path, options = {}) {
 	});
 
 	if (response.status === 401) {
-		setApiToken(null);
-		if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-			window.location.href = '/login';
-		}
+		invalidateSession();
 		throw new Error('Unauthorized');
 	}
 

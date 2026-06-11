@@ -198,7 +198,7 @@ def request_password_reset(db: Session, email: str) -> None:
         return
 
     token = create_password_reset_token(user.id)
-    reset_url = f"{settings.frontend_url.rstrip('/')}/password-reset?token={token}"
+    reset_url = f"{settings.public_frontend_url}/password-reset?token={token}"
     _send_password_reset_email(user.email, reset_url)
 
 

@@ -73,7 +73,7 @@ Legend: ⬜ Not started | 🔄 In progress | ✅ Done
 
 ## Phase 7 – Email
 
-- ✅ **EMAIL-01** Email service abstraction (local: MailHog SMTP, prod: Resend API)
+- ✅ **EMAIL-01** Email service via authenticated SMTP (IONOS)
 - ✅ **EMAIL-02** Daily summary email template (22:00)
 - ✅ **EMAIL-03** Weekly summary email template (Monday 08:00)
 - ✅ **EMAIL-04** APScheduler jobs for both emails, timezone-aware
@@ -86,6 +86,25 @@ Legend: ⬜ Not started | 🔄 In progress | ✅ Done
 - ⬜ **OPS-04** Cloud SQL connection instructions
 - ⬜ **OPS-05** Cloud Run deployment notes
 
+## Continual development
+
+- ✅ **CONT-01** Expand badge system to full 42-badge catalogue (34 visible + 8 secret) with award triggers after each completion
+- ✅ **CONT-02** Alembic migration and startup upsert for expanded badge definitions
+- ✅ **CONT-03** Frontend BADGE_ICONS for all new badge keys
+- ✅ **CONT-04** Fix admin task list – GET /tasks returns all tasks regardless of daily challenge status
+- ✅ **CONT-05** Admin panel task list grouped by frequency (Daily / Weekly / Monthly)
+- ✅ **CONT-06** Task sort_order column, Alembic migration, and PUT /tasks/reorder endpoint
+- ✅ **CONT-07** Admin drag-and-drop task reordering per frequency group (svelte-dnd-action)
+- ✅ **CONT-08** Dashboard honours admin task order (incomplete first, completed at bottom)
+- ✅ **CONT-09** API performance – batch task list queries and DueTasksCache for scoring/leaderboards
+- ✅ **CONT-10** Dashboard parallel API loading (challenges, tasks, scores)
+- ✅ **CONT-11** Production nginx listens on ports 80 and 5173 for Raspberry Pi compose mapping
+- ✅ **CONT-12** Service worker v2 – network-first HTML/JS to prevent stale cache after prod deploys
+- ✅ **CONT-13** Reorder badges so that all badges of similar types are together and secret badges are all at the end of the list
+- ✅ **CONT-14** Replace Mailhog with authenticated SMTP (IONOS, STARTTLS on port 587)
+- ⬜ **CONT-15** Expand user and household management: User who registers on website becomes admin for a new household which they name. They can then send email invites to others who will be added as standard members of that household. Ask me if clarification is required on how this should work.
+- ⬜ **CONT-16** R
+- ⬜ **CONT-17** R
 ---
 
 ## Notes for Claude Code sessions
