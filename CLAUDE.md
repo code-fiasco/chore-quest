@@ -22,6 +22,8 @@ Chore Quest is a two-person household chore gamification PWA.
 6. When creating a new DB model, always create the corresponding Alembic migration.
 7. History (Completion records) must never be altered or deleted (PRD §23).
 8. The first registered user becomes household admin automatically (PRD §4).
+9. Always back up the database before applying any migrations in production:
+   docker compose exec db pg_dump -U chorequest chorequest > backup.sql
 
 ## Running the project locally
 ```bash

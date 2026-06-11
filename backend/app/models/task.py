@@ -44,6 +44,7 @@ class Task(Base):
         Enum(Room, name="room", values_callable=lambda x: [e.value for e in x])
     )
     is_required: Mapped[bool] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
     household_id: Mapped[int] = mapped_column(ForeignKey("households.id"))
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

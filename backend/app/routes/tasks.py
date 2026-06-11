@@ -12,6 +12,7 @@ from app.services.tasks import (
     create_task,
     delete_task,
     list_tasks_grouped,
+    reorder_tasks,
     update_task,
 )
 
@@ -37,6 +38,10 @@ class TaskCreateRequest(BaseModel):
     category_id: int
     room: ROOM_VALUES
     is_required: bool = True
+
+
+class TaskReorderRequest(BaseModel):
+    task_ids: list[int] = Field(min_length=1)
 
 
 class TaskUpdateRequest(BaseModel):
@@ -82,6 +87,18 @@ def post_task(
             room=body.room,
             is_required=body.is_required,
         )
+    except TaskError as exc:
+        _http_error(exc)
+
+
+@router.put("/reorder")
+def put_task_reorder(
+    body: TaskReorderRequest,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        return reorder_tasks(db, admin, body.task_ids)
     except TaskError as exc:
         _http_error(exc)
 

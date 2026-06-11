@@ -1,4 +1,5 @@
 <script>
+	import { flip } from 'svelte/animate';
 	import { goto } from '$app/navigation';
 	import { isAdmin } from '$lib/stores/auth';
 	import { toast } from '$lib/stores/toast';
@@ -12,13 +13,14 @@
 		getGoals,
 		getTasks,
 		masterReset,
+		reorderTasks,
 		setGoals,
 		updateCategory,
 		updateTask
 	} from '$lib/api';
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
-	import { flattenTasks } from '$lib/utils/tasks';
+	import { dndzone } from 'svelte-dnd-action';
 
 	let tab = $state('tasks');
 	let loading = $state(true);
@@ -39,6 +41,12 @@
 		{ key: 'categories', label: 'Categories' },
 		{ key: 'goals', label: 'Goals' },
 		{ key: 'reset', label: 'Reset' }
+	];
+
+	const frequencySections = [
+		{ key: 'daily', label: 'Daily Tasks', icon: '☀️' },
+		{ key: 'weekly', label: 'Weekly Tasks', icon: '📅' },
+		{ key: 'monthly', label: 'Monthly Tasks', icon: '🗓️' }
 	];
 
 	function emptyTaskForm() {
@@ -182,7 +190,20 @@
 		}
 	}
 
-	const allTasks = $derived(flattenTasks(tasks));
+	function handleDndConsider(key, event) {
+		tasks = { ...tasks, [key]: event.detail.items };
+	}
+
+	async function handleDndFinalize(key, event) {
+		tasks = { ...tasks, [key]: event.detail.items };
+		try {
+			const data = await reorderTasks(event.detail.items.map((task) => task.id));
+			tasks = data;
+		} catch (err) {
+			toast.error(err.message);
+			await loadAll();
+		}
+	}
 </script>
 
 <div class="mb-4 flex items-center gap-2">
@@ -261,16 +282,50 @@
 		<button type="button" class="mb-3 min-h-11 w-full rounded-xl bg-quest-gold font-semibold text-quest-bg" onclick={openNewTask}>
 			+ Add task
 		</button>
-		<div class="space-y-2">
-			{#each allTasks as task (task.id)}
-				<div class="rounded-xl border border-quest-border bg-quest-surface-2 p-4">
-					<p class="font-medium text-quest-text">{task.name}</p>
-					<p class="text-xs text-quest-muted">{task.frequency} · {task.room} · {task.base_points} pts</p>
-					<div class="mt-2 flex gap-2">
-						<button type="button" class="min-h-11 flex-1 rounded-lg border border-quest-border text-sm" onclick={() => openEditTask(task)}>Edit</button>
-						<button type="button" class="min-h-11 flex-1 rounded-lg border border-red-500/30 text-sm text-red-300" onclick={() => removeTask(task)}>Delete</button>
-					</div>
-				</div>
+		<p class="mb-4 text-xs text-quest-muted">Drag tasks to reorder how they appear on the dashboard.</p>
+		<div class="space-y-6">
+			{#each frequencySections as section}
+				<section>
+					<h2 class="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-quest-purple-light">
+						<span>{section.icon}</span> {section.label}
+					</h2>
+					{#if (tasks[section.key] ?? []).length === 0}
+						<p class="rounded-xl border border-dashed border-quest-border px-4 py-6 text-center text-sm text-quest-muted">
+							No {section.label.toLowerCase()} yet.
+						</p>
+					{:else}
+						<div
+							class="space-y-2"
+							use:dndzone={{
+								items: tasks[section.key],
+								flipDurationMs: 200,
+								type: section.key,
+								dropTargetStyle: { outline: '2px dashed rgba(167, 139, 250, 0.5)' }
+							}}
+							onconsider={(event) => handleDndConsider(section.key, event)}
+							onfinalize={(event) => handleDndFinalize(section.key, event)}
+						>
+							{#each tasks[section.key] as task (task.id)}
+								<div
+									animate:flip={{ duration: 200 }}
+									class="rounded-xl border border-quest-border bg-quest-surface-2 p-4"
+								>
+									<div class="flex items-start gap-3">
+										<span class="mt-1 cursor-grab text-quest-muted active:cursor-grabbing" aria-hidden="true">⠿</span>
+										<div class="min-w-0 flex-1">
+											<p class="font-medium text-quest-text">{task.name}</p>
+											<p class="text-xs text-quest-muted">{task.room} · {task.base_points} pts · {task.category?.name}</p>
+											<div class="mt-2 flex gap-2">
+												<button type="button" class="min-h-11 flex-1 rounded-lg border border-quest-border text-sm" onclick={() => openEditTask(task)}>Edit</button>
+												<button type="button" class="min-h-11 flex-1 rounded-lg border border-red-500/30 text-sm text-red-300" onclick={() => removeTask(task)}>Delete</button>
+											</div>
+										</div>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</section>
 			{/each}
 		</div>
 	{/if}

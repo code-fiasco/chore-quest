@@ -167,32 +167,39 @@ def task_to_dict(task: Task, instance: TaskInstance, user: User, db: Session) ->
         "category": {"id": task.category.id, "name": task.category.name},
         "room": task.room.value,
         "is_required": task.is_required,
+        "sort_order": task.sort_order,
         "household_id": task.household_id,
         "created_at": task.created_at.isoformat(),
         "current_instance": instance_to_dict(instance, user, db),
     }
 
 
-def list_tasks_grouped(db: Session, user: User) -> dict:
-    from app.services.challenges import ensure_today_challenge_ids
+def _next_sort_order(
+    db: Session, household_id: int, frequency: TaskFrequency
+) -> int:
+    current_max = db.scalar(
+        select(func.max(Task.sort_order)).where(
+            Task.household_id == household_id,
+            Task.frequency == frequency,
+        )
+    )
+    return (current_max or -1) + 1
 
+
+def list_tasks_grouped(db: Session, user: User) -> dict:
     household = db.get(Household, user.household_id)
     if household is None:
         raise TaskError("Household not found", status_code=404)
-
-    challenge_task_ids = ensure_today_challenge_ids(db, household)
 
     tasks = db.scalars(
         select(Task)
         .where(Task.household_id == user.household_id)
         .options(joinedload(Task.category))
-        .order_by(Task.name)
+        .order_by(Task.sort_order, Task.id)
     ).all()
 
     grouped: dict[str, list] = {"daily": [], "weekly": [], "monthly": []}
     for task in tasks:
-        if task.id in challenge_task_ids:
-            continue
         instance = ensure_current_instance(db, task, household)
         grouped[task.frequency.value].append(task_to_dict(task, instance, user, db))
 
@@ -231,6 +238,7 @@ def create_task(
         category_id=category_id,
         room=parsed_room,
         is_required=is_required,
+        sort_order=_next_sort_order(db, user.household_id, parsed_frequency),
         household_id=user.household_id,
     )
     db.add(task)
@@ -268,7 +276,12 @@ def update_task(
         task.description = description.strip() if description else None
 
     if frequency is not None:
-        task.frequency = _parse_frequency(frequency)
+        parsed_frequency = _parse_frequency(frequency)
+        if parsed_frequency != task.frequency:
+            task.frequency = parsed_frequency
+            task.sort_order = _next_sort_order(
+                db, user.household_id, parsed_frequency
+            )
 
     if base_points is not None:
         if base_points < 1:
@@ -290,6 +303,37 @@ def update_task(
     db.commit()
     db.refresh(task)
     return task_to_dict(task, instance, user, db)
+
+
+def reorder_tasks(db: Session, user: User, task_ids: list[int]) -> dict:
+    if not task_ids:
+        raise TaskError("At least one task ID is required")
+
+    if len(task_ids) != len(set(task_ids)):
+        raise TaskError("Task IDs must be unique")
+
+    tasks = db.scalars(
+        select(Task)
+        .where(
+            Task.id.in_(task_ids),
+            Task.household_id == user.household_id,
+        )
+        .options(joinedload(Task.category))
+    ).all()
+    tasks_by_id = {task.id: task for task in tasks}
+
+    if len(tasks_by_id) != len(task_ids):
+        raise TaskError("One or more tasks were not found", status_code=404)
+
+    frequencies = {tasks_by_id[task_id].frequency for task_id in task_ids}
+    if len(frequencies) != 1:
+        raise TaskError("All tasks in a reorder request must share the same frequency")
+
+    for index, task_id in enumerate(task_ids):
+        tasks_by_id[task_id].sort_order = index
+
+    db.commit()
+    return list_tasks_grouped(db, user)
 
 
 def delete_task(db: Session, user: User, task_id: int) -> None:

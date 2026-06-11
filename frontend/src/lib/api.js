@@ -119,6 +119,13 @@ export function deleteTask(taskId) {
 	return request(`/tasks/${taskId}`, { method: 'DELETE' });
 }
 
+export function reorderTasks(taskIds) {
+	return request('/tasks/reorder', {
+		method: 'PUT',
+		body: JSON.stringify({ task_ids: taskIds })
+	});
+}
+
 export function completeTask(taskInstanceId) {
 	return request(`/tasks/${taskInstanceId}/complete`, { method: 'POST' });
 }

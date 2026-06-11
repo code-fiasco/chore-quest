@@ -33,6 +33,7 @@ Legend: ⬜ Not started | 🔄 In progress | ✅ Done
 - ✅ **TASK-05** Task instance generation logic – daily/weekly/monthly scheduling
 - ✅ **TASK-06** Monthly task distribution across 4 weeks
 - ✅ **TASK-07** Category CRUD (admin only)
+- ✅ **TASK-08** Task sort_order column, reorder endpoint, admin drag-and-drop
 
 ## Phase 4 – Completion & Scoring
 
@@ -51,9 +52,9 @@ Legend: ⬜ Not started | 🔄 In progress | ✅ Done
 - ✅ **GAME-01** Streak tracking – one required task per day maintains streak
 - ✅ **GAME-02** Daily challenge generation at 06:00 household timezone (3 tasks selected)
 - ✅ **GAME-03** Weekly goal configuration (admin) and tracking
-- ✅ **GAME-04** Badge definitions (visible badges)
-- ✅ **GAME-05** Secret badge definitions
-- ✅ **GAME-06** Badge award logic and triggers
+- ✅ **GAME-04** Badge definitions (34 visible badges)
+- ✅ **GAME-05** Secret badge definitions (8 secret badges incl. The Completionist)
+- ✅ **GAME-06** Badge award logic and triggers (all 42 badges checked after each completion)
 - ✅ **GAME-07** Leaderboard snapshots – weekly, monthly, lifetime
 
 ## Phase 6 – Frontend (SvelteKit)
