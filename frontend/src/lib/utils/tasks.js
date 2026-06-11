@@ -1,4 +1,4 @@
-/** Sort tasks: incomplete first, then by admin sort_order. */
+/** Incomplete tasks first (admin sort_order), then completed tasks (admin sort_order). */
 export function sortTasks(tasks) {
 	return [...tasks].sort((a, b) => {
 		const aDone = a.current_instance?.user_status?.is_completed || a.current_instance?.is_locked;
