@@ -51,9 +51,13 @@ def get_required_completion_dates(
 
 
 def calculate_current_streak(
-    db: Session, user: User, household: Household
+    db: Session,
+    user: User,
+    household: Household,
+    *,
+    required_dates: set[datetime.date] | None = None,
 ) -> int:
-    dates = get_required_completion_dates(db, user, household)
+    dates = required_dates or get_required_completion_dates(db, user, household)
     today = household_today(household)
     cursor = today if today in dates else today - datetime.timedelta(days=1)
 
@@ -65,10 +69,15 @@ def calculate_current_streak(
 
 
 def streak_milestone_bonus_for_date(
-    db: Session, user: User, household: Household, on_date: datetime.date
+    db: Session,
+    user: User,
+    household: Household,
+    on_date: datetime.date,
+    *,
+    required_dates: set[datetime.date] | None = None,
 ) -> int:
     """Award +50 when a required completion on on_date achieves an exact milestone."""
-    dates = get_required_completion_dates(db, user, household)
+    dates = required_dates or get_required_completion_dates(db, user, household)
     cursor = on_date if on_date in dates else on_date - datetime.timedelta(days=1)
     streak = 0
     while cursor in dates:

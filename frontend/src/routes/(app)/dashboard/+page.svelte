@@ -26,11 +26,12 @@
 	const challengeTaskIds = $derived(new Set(challenges.map((c) => c.task_id)));
 
 	async function loadData() {
-		// Load challenges first so today's challenge rows exist before tasks/completion.
-		const challengeData = await getChallenges();
+		const [challengeData, taskData, scoreData] = await Promise.all([
+			getChallenges(),
+			getTasks(),
+			getScores()
+		]);
 		challenges = challengeData.challenges ?? [];
-
-		const [taskData, scoreData] = await Promise.all([getTasks(), getScores()]);
 		tasks = taskData;
 		scores = scoreData;
 	}

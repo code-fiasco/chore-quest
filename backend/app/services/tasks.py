@@ -1,5 +1,6 @@
 import calendar
 import datetime
+from collections import defaultdict
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
@@ -134,16 +135,27 @@ def _user_instance_status(
     }
 
 
-def instance_to_dict(instance: TaskInstance, user: User, db: Session) -> dict:
+def instance_to_dict(
+    instance: TaskInstance,
+    user: User,
+    db: Session,
+    *,
+    user_status: dict | None = None,
+    completer: User | None = None,
+) -> dict:
     completed_by = None
     if instance.completed_by_id is not None:
-        completer = db.get(User, instance.completed_by_id)
+        if completer is None:
+            completer = db.get(User, instance.completed_by_id)
         if completer is not None:
             completed_by = {
                 "id": completer.id,
                 "display_name": completer.display_name,
                 "avatar": completer.avatar,
             }
+
+    if user_status is None:
+        user_status = _user_instance_status(db, user, instance)
 
     return {
         "id": instance.id,
@@ -153,11 +165,19 @@ def instance_to_dict(instance: TaskInstance, user: User, db: Session) -> dict:
         "completed_by_id": instance.completed_by_id,
         "completed_by": completed_by,
         "completed_at": instance.completed_at.isoformat() if instance.completed_at else None,
-        "user_status": _user_instance_status(db, user, instance),
+        "user_status": user_status,
     }
 
 
-def task_to_dict(task: Task, instance: TaskInstance, user: User, db: Session) -> dict:
+def task_to_dict(
+    task: Task,
+    instance: TaskInstance,
+    user: User,
+    db: Session,
+    *,
+    user_status: dict | None = None,
+    completer: User | None = None,
+) -> dict:
     return {
         "id": task.id,
         "name": task.name,
@@ -170,7 +190,13 @@ def task_to_dict(task: Task, instance: TaskInstance, user: User, db: Session) ->
         "sort_order": task.sort_order,
         "household_id": task.household_id,
         "created_at": task.created_at.isoformat(),
-        "current_instance": instance_to_dict(instance, user, db),
+        "current_instance": instance_to_dict(
+            instance,
+            user,
+            db,
+            user_status=user_status,
+            completer=completer,
+        ),
     }
 
 
@@ -186,6 +212,28 @@ def _next_sort_order(
     return (current_max or -1) + 1
 
 
+def _get_or_create_current_instance(
+    db: Session,
+    task: Task,
+    household: Household,
+    instances_by_task: dict[int, list[TaskInstance]],
+) -> tuple[TaskInstance, bool]:
+    period_start, period_end = get_period_bounds(task, household, household_today(household))
+    for instance in instances_by_task.get(task.id, []):
+        if instance.period_start == period_start and instance.period_end == period_end:
+            return instance, False
+
+    instance = TaskInstance(
+        task_id=task.id,
+        period_start=period_start,
+        period_end=period_end,
+    )
+    db.add(instance)
+    db.flush()
+    instances_by_task.setdefault(task.id, []).append(instance)
+    return instance, True
+
+
 def list_tasks_grouped(db: Session, user: User) -> dict:
     household = db.get(Household, user.household_id)
     if household is None:
@@ -198,12 +246,69 @@ def list_tasks_grouped(db: Session, user: User) -> dict:
         .order_by(Task.sort_order, Task.id)
     ).all()
 
-    grouped: dict[str, list] = {"daily": [], "weekly": [], "monthly": []}
-    for task in tasks:
-        instance = ensure_current_instance(db, task, household)
-        grouped[task.frequency.value].append(task_to_dict(task, instance, user, db))
+    task_ids = [task.id for task in tasks]
+    instances_by_task: dict[int, list[TaskInstance]] = defaultdict(list)
+    if task_ids:
+        for instance in db.scalars(
+            select(TaskInstance).where(TaskInstance.task_id.in_(task_ids))
+        ).all():
+            instances_by_task[instance.task_id].append(instance)
 
-    db.commit()
+    current_instances: list[TaskInstance] = []
+    created_instance = False
+    for task in tasks:
+        instance, created = _get_or_create_current_instance(
+            db, task, household, instances_by_task
+        )
+        if created:
+            created_instance = True
+        current_instances.append(instance)
+
+    instance_ids = [instance.id for instance in current_instances]
+    user_completions: dict[int, Completion] = {}
+    if instance_ids:
+        for completion in db.scalars(
+            select(Completion).where(
+                Completion.user_id == user.id,
+                Completion.task_instance_id.in_(instance_ids),
+                Completion.is_undone.is_(False),
+            )
+        ).all():
+            user_completions[completion.task_instance_id] = completion
+
+    completer_ids = {
+        instance.completed_by_id
+        for instance in current_instances
+        if instance.completed_by_id is not None
+    }
+    completers_by_id: dict[int, User] = {}
+    if completer_ids:
+        for completer in db.scalars(
+            select(User).where(User.id.in_(completer_ids))
+        ).all():
+            completers_by_id[completer.id] = completer
+
+    grouped: dict[str, list] = {"daily": [], "weekly": [], "monthly": []}
+    for task, instance in zip(tasks, current_instances, strict=True):
+        completion = user_completions.get(instance.id)
+        grouped[task.frequency.value].append(
+            task_to_dict(
+                task,
+                instance,
+                user,
+                db,
+                user_status={
+                    "is_completed": completion is not None,
+                    "completed_at": (
+                        completion.completed_at.isoformat() if completion else None
+                    ),
+                },
+                completer=completers_by_id.get(instance.completed_by_id),
+            )
+        )
+
+    if created_instance:
+        db.commit()
     return grouped
 
 

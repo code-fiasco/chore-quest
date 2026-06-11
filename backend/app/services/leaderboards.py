@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.gamification import Leaderboard, PeriodType, WeeklyGoal
 from app.models.household import Household
 from app.models.user import User
-from app.services.scoring import build_score_breakdown
+from app.services.scoring import _DueTasksCache, build_score_breakdown
 from app.services.tasks import household_today
 
 
@@ -56,9 +56,12 @@ def get_leaderboards(db: Session, user: User) -> dict:
     weekly_scores: dict[int, int] = {}
     monthly_scores: dict[int, int] = {}
     lifetime_scores: dict[int, int] = {}
+    due_cache = _DueTasksCache(db, household)
 
     for member in members:
-        breakdown = build_score_breakdown(db, member, household)
+        breakdown = build_score_breakdown(
+            db, member, household, due_cache=due_cache
+        )
         weekly_scores[member.id] = breakdown["weekly"]["total"]
         monthly_scores[member.id] = breakdown["monthly"]["total"]
         lifetime_scores[member.id] = breakdown["lifetime"]["total"]

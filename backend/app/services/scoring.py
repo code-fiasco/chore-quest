@@ -1,5 +1,6 @@
 import datetime
-from dataclasses import dataclass
+from collections import defaultdict
+from dataclasses import dataclass, field
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -11,6 +12,7 @@ from app.services.challenges import challenge_bonus_for_completion, ensure_today
 from app.services.streaks import (
     calculate_current_streak,
     completion_local_date,
+    get_required_completion_dates,
     streak_milestone_bonus_for_date,
 )
 from app.services.tasks import household_today
@@ -115,9 +117,65 @@ def _load_active_completions(
     return records
 
 
+@dataclass
+class _DueTasksCache:
+    """Preloads household tasks and instances to avoid N+1 queries during scoring."""
+
+    db: Session
+    household: Household
+    _tasks: list[Task] = field(default_factory=list, init=False)
+    _instances_by_task: dict[int, list[TaskInstance]] = field(
+        default_factory=dict, init=False
+    )
+    _loaded: bool = field(default=False, init=False)
+    _day_cache: dict[datetime.date, list[tuple[Task, TaskInstance]]] = field(
+        default_factory=dict, init=False
+    )
+
+    def _ensure_loaded(self) -> None:
+        if self._loaded:
+            return
+        self._tasks = list(
+            self.db.scalars(
+                select(Task)
+                .where(Task.household_id == self.household.id)
+                .options(joinedload(Task.category))
+            ).all()
+        )
+        task_ids = [task.id for task in self._tasks]
+        if task_ids:
+            instances = self.db.scalars(
+                select(TaskInstance).where(TaskInstance.task_id.in_(task_ids))
+            ).all()
+            grouped: dict[int, list[TaskInstance]] = defaultdict(list)
+            for instance in instances:
+                grouped[instance.task_id].append(instance)
+            self._instances_by_task = grouped
+        self._loaded = True
+
+    def tasks_due_on_date(self, day: datetime.date) -> list[tuple[Task, TaskInstance]]:
+        if day not in self._day_cache:
+            self._ensure_loaded()
+            due: list[tuple[Task, TaskInstance]] = []
+            for task in self._tasks:
+                for instance in self._instances_by_task.get(task.id, []):
+                    if instance.period_start <= day <= instance.period_end:
+                        due.append((task, instance))
+                        break
+            self._day_cache[day] = due
+        return self._day_cache[day]
+
+
 def _tasks_due_on_date(
-    db: Session, household: Household, day: datetime.date
+    db: Session,
+    household: Household,
+    day: datetime.date,
+    *,
+    due_cache: _DueTasksCache | None = None,
 ) -> list[tuple[Task, TaskInstance]]:
+    if due_cache is not None:
+        return due_cache.tasks_due_on_date(day)
+
     tasks = db.scalars(
         select(Task)
         .where(Task.household_id == household.id)
@@ -144,10 +202,14 @@ def _room_sweep_achieved(
     day: datetime.date,
     room,
     completed_instance_ids: set[int],
+    *,
+    due_cache: _DueTasksCache | None = None,
 ) -> bool:
     room_tasks = [
         (task, instance)
-        for task, instance in _tasks_due_on_date(db, household, day)
+        for task, instance in _tasks_due_on_date(
+            db, household, day, due_cache=due_cache
+        )
         if task.room == room
     ]
     if not room_tasks:
@@ -161,10 +223,14 @@ def _category_sweep_achieved(
     day: datetime.date,
     category_id: int,
     completed_instance_ids: set[int],
+    *,
+    due_cache: _DueTasksCache | None = None,
 ) -> bool:
     category_tasks = [
         (task, instance)
-        for task, instance in _tasks_due_on_date(db, household, day)
+        for task, instance in _tasks_due_on_date(
+            db, household, day, due_cache=due_cache
+        )
         if task.category_id == category_id
     ]
     if not category_tasks:
@@ -178,7 +244,25 @@ def _weekly_goal_achieved(
     week_start: datetime.date,
     week_end: datetime.date,
     completed_instance_ids: set[int],
+    *,
+    due_cache: _DueTasksCache | None = None,
 ) -> bool:
+    if due_cache is not None:
+        due_cache._ensure_loaded()
+        required_tasks = [task for task in due_cache._tasks if task.is_required]
+        for task in required_tasks:
+            instance = None
+            for candidate in due_cache._instances_by_task.get(task.id, []):
+                if (
+                    candidate.period_start <= week_end
+                    and candidate.period_end >= week_start
+                ):
+                    instance = candidate
+                    break
+            if instance is None or instance.id not in completed_instance_ids:
+                return False
+        return bool(required_tasks)
+
     required_tasks = db.scalars(
         select(Task).where(
             Task.household_id == household.id,
@@ -202,6 +286,7 @@ def _weekly_goal_achieved(
 def recalculate_user_scores(db: Session, user: User, household: Household) -> None:
     """Recalculate points_awarded on every active completion from scratch."""
     records = _load_active_completions(db, user, household)
+    due_cache = _DueTasksCache(db, household)
 
     by_day: dict[datetime.date, list[CompletionRecord]] = {}
     for record in records:
@@ -216,7 +301,12 @@ def recalculate_user_scores(db: Session, user: User, household: Household) -> No
             category_bonus = 0
 
             if _room_sweep_achieved(
-                db, household, day, record.task.room, completed_ids
+                db,
+                household,
+                day,
+                record.task.room,
+                completed_ids,
+                due_cache=due_cache,
             ):
                 room_bonus = int(base * 0.5)
 
@@ -226,6 +316,7 @@ def recalculate_user_scores(db: Session, user: User, household: Household) -> No
                 day,
                 record.task.category_id,
                 completed_ids,
+                due_cache=due_cache,
             ):
                 category_bonus = int(base * 0.3)
 
@@ -281,8 +372,12 @@ def build_score_breakdown(
     household: Household,
     *,
     as_of: datetime.date | None = None,
+    due_cache: _DueTasksCache | None = None,
 ) -> dict:
     records = _load_active_completions(db, user, household)
+    if due_cache is None:
+        due_cache = _DueTasksCache(db, household)
+    required_dates = get_required_completion_dates(db, user, household)
     today = as_of or household_today(household)
     week_start = _week_start(today)
     week_end = week_start + datetime.timedelta(days=6)
@@ -308,7 +403,11 @@ def build_score_breakdown(
         if len(rooms) >= 3:
             extras.deep_clean = 20
         extras.streak_milestone = streak_milestone_bonus_for_date(
-            db, user, household, day
+            db,
+            user,
+            household,
+            day,
+            required_dates=required_dates,
         )
         daily_extras[day] = extras
 
@@ -326,6 +425,7 @@ def build_score_breakdown(
                 week_start_day,
                 week_start_day + datetime.timedelta(days=6),
                 week_completed,
+                due_cache=due_cache,
             ):
                 week_extras.weekly_goal = 100
             weekly_extras[week_start_day] = week_extras
@@ -345,7 +445,12 @@ def build_score_breakdown(
                     continue
                 b = record.task.base_points
                 if _room_sweep_achieved(
-                    db, household, day, record.task.room, completed_ids
+                    db,
+                    household,
+                    day,
+                    record.task.room,
+                    completed_ids,
+                    due_cache=due_cache,
                 ):
                     room_bonus += int(b * 0.5)
                 if _category_sweep_achieved(
@@ -354,6 +459,7 @@ def build_score_breakdown(
                     day,
                     record.task.category_id,
                     completed_ids,
+                    due_cache=due_cache,
                 ):
                     category_bonus += int(b * 0.3)
 
@@ -390,7 +496,12 @@ def build_score_breakdown(
         "user_id": user.id,
         "display_name": user.display_name,
         "streak": {
-            "current": calculate_current_streak(db, user, household),
+            "current": calculate_current_streak(
+                db,
+                user,
+                household,
+                required_dates=required_dates,
+            ),
         },
         "daily": period_score(today, today, weekly=False),
         "weekly": period_score(week_start, week_end, weekly=True),
