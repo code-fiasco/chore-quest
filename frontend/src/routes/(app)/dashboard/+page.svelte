@@ -16,6 +16,7 @@
 	let scores = $state(null);
 	let confirmOpen = $state(false);
 	let pendingTask = $state(null);
+	let loadGeneration = 0;
 
 	const today = new Date().toLocaleDateString(undefined, {
 		weekday: 'long',
@@ -25,14 +26,24 @@
 
 	const challengeTaskIds = $derived(new Set(challenges.map((c) => c.task_id)));
 
+	function applyTaskData(taskData) {
+		tasks = {
+			daily: [...(taskData.daily ?? [])],
+			weekly: [...(taskData.weekly ?? [])],
+			monthly: [...(taskData.monthly ?? [])]
+		};
+	}
+
 	async function loadData() {
+		const generation = ++loadGeneration;
 		const [challengeData, taskData, scoreData] = await Promise.all([
 			getChallenges(),
 			getTasks(),
 			getScores()
 		]);
+		if (generation !== loadGeneration) return;
 		challenges = challengeData.challenges ?? [];
-		tasks = taskData;
+		applyTaskData(taskData);
 		scores = scoreData;
 	}
 

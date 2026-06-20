@@ -1,4 +1,4 @@
-const CACHE = 'chore-quest-v2';
+const CACHE = 'chore-quest-v3';
 const SHELL = ['/manifest.json', '/icon-192.svg', '/icon-512.svg'];
 
 self.addEventListener('install', (event) => {
@@ -28,6 +28,12 @@ self.addEventListener('fetch', (event) => {
 	if (event.request.method !== 'GET') return;
 	const url = new URL(event.request.url);
 	if (url.origin !== self.location.origin) return;
+
+	// API responses must always come from the network (e.g. task list after completion).
+	if (url.pathname.startsWith('/api/')) {
+		event.respondWith(fetch(event.request));
+		return;
+	}
 
 	// Always fetch HTML and JS bundles from the network so deploys are not broken by stale cache.
 	if (isAppShellRequest(event.request, url)) {
