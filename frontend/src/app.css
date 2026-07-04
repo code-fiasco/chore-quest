@@ -34,6 +34,47 @@ body {
 	min-height: 100dvh;
 }
 
+.pull-indicator {
+	height: 0;
+	opacity: 0;
+	transition:
+		height 0.2s ease,
+		opacity 0.2s ease;
+}
+
+.pull-indicator--active {
+	height: 2.5rem;
+	opacity: 0.5;
+}
+
+.pull-indicator--ready {
+	opacity: 1;
+}
+
+progress.stats-bar {
+	appearance: none;
+	border: none;
+	overflow: hidden;
+	border-radius: 9999px;
+	background-color: var(--cq-bg);
+}
+
+progress.stats-bar::-webkit-progress-bar {
+	border-radius: 9999px;
+	background-color: var(--cq-bg);
+}
+
+progress.stats-bar::-webkit-progress-value {
+	border-radius: 9999px;
+	background: linear-gradient(to right, var(--cq-purple), var(--cq-gold));
+	transition: width 0.3s ease;
+}
+
+progress.stats-bar::-moz-progress-bar {
+	border-radius: 9999px;
+	background: linear-gradient(to right, var(--cq-purple), var(--cq-gold));
+}
+
 .page-enter {
 	animation: page-in 0.25s ease-out;
 }

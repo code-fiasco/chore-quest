@@ -60,12 +60,12 @@
 				<span class="text-quest-muted">Weekly completion rate</span>
 				<span class="font-semibold text-quest-gold">{stats.weekly_completion_rate}%</span>
 			</div>
-			<div class="mt-2 h-3 overflow-hidden rounded-full bg-quest-bg">
-				<div
-					class="h-full rounded-full bg-linear-to-r from-quest-purple to-quest-gold transition-all"
-					style="width: {stats.weekly_completion_rate}%"
-				></div>
-			</div>
+			<progress
+				class="stats-bar mt-2 h-3 w-full"
+				value={stats.weekly_completion_rate}
+				max="100"
+				aria-label="Weekly completion rate"
+			></progress>
 		</div>
 
 		<div class="rounded-xl border border-quest-border bg-quest-surface-2 p-4">

@@ -16,10 +16,9 @@
 		>
 			<div class="mb-2 flex gap-1">
 				{#each t.preview as colour}
-					<span
-						class="h-4 w-4 rounded-full border border-black/10"
-						style="background-color: {colour}"
-					></span>
+					<svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
+						<circle cx="8" cy="8" r="7" fill={colour} stroke="rgba(0,0,0,0.1)" stroke-width="1" />
+					</svg>
 				{/each}
 			</div>
 			<span class="text-sm font-medium text-quest-text">{t.name}</span>

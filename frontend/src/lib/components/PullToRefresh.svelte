@@ -51,8 +51,9 @@
 	ontouchend={onTouchEnd}
 >
 	<div
-		class="flex items-center justify-center overflow-hidden text-xs text-quest-muted transition-all"
-		style="height: {refreshing || pullDistance > 0 ? '2.5rem' : '0'}; opacity: {Math.min(pullDistance / THRESHOLD, 1)}"
+		class="pull-indicator flex items-center justify-center overflow-hidden text-xs text-quest-muted"
+		class:pull-indicator--active={refreshing || pullDistance > 0}
+		class:pull-indicator--ready={!refreshing && pullDistance >= THRESHOLD}
 	>
 		{refreshing ? 'Refreshing…' : pullDistance >= THRESHOLD ? 'Release to refresh' : 'Pull to refresh'}
 	</div>
