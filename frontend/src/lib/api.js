@@ -91,6 +91,10 @@ export function register({ email, password, display_name, avatar }) {
 	});
 }
 
+export function getRegistrationStatus() {
+	return request('/auth/registration-status');
+}
+
 export function logout() {
 	return request('/auth/logout', { method: 'POST' });
 }

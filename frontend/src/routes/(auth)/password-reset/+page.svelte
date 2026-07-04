@@ -1,10 +1,24 @@
 <script>
+	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { requestPasswordReset } from '$lib/api';
 
 	let email = $state('');
 	let error = $state('');
 	let success = $state('');
 	let loading = $state(false);
+
+	// Older reset emails linked here with ?token=; the form lives at /confirm.
+	$effect(() => {
+		if (!browser) return;
+		const token = page.url.searchParams.get('token');
+		if (token) {
+			goto(`/password-reset/confirm?token=${encodeURIComponent(token)}`, {
+				replaceState: true
+			});
+		}
+	});
 
 	async function handleSubmit(event) {
 		event.preventDefault();

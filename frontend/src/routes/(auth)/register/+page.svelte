@@ -1,6 +1,8 @@
 <script>
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import AvatarPicker from '$lib/components/AvatarPicker.svelte';
+	import { getRegistrationStatus } from '$lib/api';
 	import { auth } from '$lib/stores/auth';
 
 	let display_name = $state('');
@@ -10,6 +12,20 @@
 	let confirmPassword = $state('');
 	let error = $state('');
 	let loading = $state(false);
+	let registrationOpen = $state(true);
+	let checkingStatus = $state(true);
+
+	onMount(async () => {
+		try {
+			const status = await getRegistrationStatus();
+			registrationOpen = status.open;
+		} catch {
+			// If status check fails, still allow trying register (backend enforces the limit).
+			registrationOpen = true;
+		} finally {
+			checkingStatus = false;
+		}
+	});
 
 	async function handleSubmit(event) {
 		event.preventDefault();
@@ -39,6 +55,18 @@
 >
 	<h2 class="mb-6 text-xl font-semibold text-quest-text">Join the quest</h2>
 
+	{#if checkingStatus}
+		<p class="text-sm text-quest-muted">Checking availability…</p>
+	{:else if !registrationOpen}
+		<div
+			class="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
+		>
+			Registration is closed — this household already has two members.
+		</div>
+		<p class="text-center text-sm text-quest-muted">
+			<a href="/login" class="font-medium text-quest-purple-light hover:underline">Sign in instead</a>
+		</p>
+	{:else}
 	{#if error}
 		<div
 			class="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
@@ -111,4 +139,5 @@
 		Already have an account?
 		<a href="/login" class="font-medium text-quest-purple-light hover:underline">Sign in</a>
 	</p>
+	{/if}
 </form>

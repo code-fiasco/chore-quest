@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime, timedelta, timezone
 
@@ -7,10 +8,12 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.services.email import send_email
 from app.models.household import Household
 from app.models.user import User, UserRole
 from app.seed import ensure_default_categories
+from app.services.email import EmailError, send_email
+
+logger = logging.getLogger(__name__)
 
 PREDEFINED_AVATARS = (
     "Tiger",
@@ -113,6 +116,15 @@ def get_user_by_email(db: Session, email: str) -> User | None:
     return db.scalar(select(User).where(func.lower(User.email) == email.lower()))
 
 
+def get_registration_status(db: Session) -> dict:
+    user_count = db.scalar(select(func.count()).select_from(User)) or 0
+    return {
+        "open": user_count < MAX_HOUSEHOLD_MEMBERS,
+        "max_members": MAX_HOUSEHOLD_MEMBERS,
+        "current_members": user_count,
+    }
+
+
 def register_user(
     db: Session,
     *,
@@ -188,7 +200,12 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     return user
 
 
-def request_password_reset(db: Session, email: str) -> None:
+def request_password_reset(
+    db: Session,
+    email: str,
+    *,
+    frontend_base_url: str | None = None,
+) -> None:
     email = email.strip().lower()
     if not email:
         raise AuthError("Email is required")
@@ -198,8 +215,25 @@ def request_password_reset(db: Session, email: str) -> None:
         return
 
     token = create_password_reset_token(user.id)
-    reset_url = f"{settings.public_frontend_url}/password-reset?token={token}"
-    _send_password_reset_email(user.email, reset_url)
+    base_url = (frontend_base_url or settings.public_frontend_url).rstrip("/")
+    reset_url = f"{base_url}/password-reset/confirm?token={token}"
+
+    # Local/dev: always log the link so reset works when SMTP/DNS is unavailable.
+    if not settings.is_production:
+        logger.warning("Password reset link for %s: %s", user.email, reset_url)
+
+    try:
+        _send_password_reset_email(user.email, reset_url)
+    except EmailError as exc:
+        if settings.is_production:
+            raise AuthError(
+                "Unable to send password reset email. Please try again later.",
+                status_code=503,
+            ) from exc
+        # Non-production: link is already in logs; do not fail the request.
+        logger.warning(
+            "Password reset email failed; use the logged link instead: %s", exc
+        )
 
 
 def confirm_password_reset(db: Session, token: str, new_password: str) -> None:

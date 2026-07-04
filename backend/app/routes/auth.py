@@ -1,9 +1,10 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
@@ -15,6 +16,7 @@ from app.services.auth import (
     authenticate_user,
     confirm_password_reset,
     create_session_token,
+    get_registration_status,
     register_user,
     request_password_reset,
     update_user_profile,
@@ -62,17 +64,27 @@ def _set_auth_cookie(response: Response, token: str) -> None:
         httponly=True,
         max_age=int(timedelta(days=SESSION_TOKEN_EXPIRE_DAYS).total_seconds()),
         samesite="lax",
-        secure=False,
+        secure=settings.is_production,
     )
 
 
 def _clear_auth_cookie(response: Response) -> None:
-    response.delete_cookie(key=COOKIE_NAME, httponly=True, samesite="lax")
+    response.delete_cookie(
+        key=COOKIE_NAME,
+        httponly=True,
+        samesite="lax",
+        secure=settings.is_production,
+    )
 
 
 @router.get("/avatars")
 def list_avatars():
     return {"avatars": list(PREDEFINED_AVATARS)}
+
+
+@router.get("/registration-status")
+def registration_status(db: Session = Depends(get_db)):
+    return get_registration_status(db)
 
 
 @router.post("/register", status_code=201)
@@ -137,12 +149,34 @@ def update_profile(
     return {"user": user_to_dict(user)}
 
 
+def _frontend_base_url(request: Request) -> str:
+    """Prefer the browser-facing host over container-local FRONTEND_URL=auto."""
+    configured = settings.frontend_url.strip()
+    if configured.lower() != "auto":
+        return settings.public_frontend_url
+
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+    if not host:
+        return settings.public_frontend_url
+
+    scheme = request.headers.get("x-forwarded-proto") or request.url.scheme or "http"
+    return f"{scheme}://{host}".rstrip("/")
+
+
 @router.post("/password-reset/request")
-def password_reset_request(body: PasswordResetRequest, db: Session = Depends(get_db)):
+def password_reset_request(
+    body: PasswordResetRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
     try:
-        request_password_reset(db, body.email)
+        request_password_reset(
+            db,
+            body.email,
+            frontend_base_url=_frontend_base_url(request),
+        )
     except AuthError as exc:
-        raise _http_error(exc)
+        raise _http_error(exc) from exc
 
     return {
         "message": "If an account exists for that email, a password reset link has been sent"

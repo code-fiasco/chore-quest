@@ -42,7 +42,7 @@ def _send_via_smtp(
                 smtp.ehlo()
             smtp.login(settings.smtp_username, settings.smtp_password.get_secret_value())
             smtp.send_message(message)
-    except smtplib.SMTPException as exc:
+    except (smtplib.SMTPException, OSError, TimeoutError) as exc:
         logger.exception("SMTP error sending email to %s", to)
         raise EmailError(f"Failed to send email: {exc}") from exc
 

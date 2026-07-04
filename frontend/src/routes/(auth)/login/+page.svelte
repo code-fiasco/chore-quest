@@ -1,11 +1,23 @@
 <script>
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { getRegistrationStatus } from '$lib/api';
 	import { auth } from '$lib/stores/auth';
 
 	let email = $state('');
 	let password = $state('');
 	let error = $state('');
 	let loading = $state(false);
+	let registrationOpen = $state(true);
+
+	onMount(async () => {
+		try {
+			const status = await getRegistrationStatus();
+			registrationOpen = status.open;
+		} catch {
+			registrationOpen = true;
+		}
+	});
 
 	async function handleSubmit(event) {
 		event.preventDefault();
@@ -72,7 +84,11 @@
 	</p>
 
 	<p class="mt-6 text-center text-sm text-quest-muted">
-		No account?
-		<a href="/register" class="font-medium text-quest-gold hover:underline">Create one</a>
+		{#if registrationOpen}
+			No account?
+			<a href="/register" class="font-medium text-quest-gold hover:underline">Create one</a>
+		{:else}
+			Registration is closed for new members.
+		{/if}
 	</p>
 </form>

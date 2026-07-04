@@ -38,6 +38,9 @@ app = FastAPI(
     ),
     swagger_ui_parameters={"persistAuthorization": True},
     lifespan=lifespan,
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
 )
 
 _cors_kwargs: dict = {
