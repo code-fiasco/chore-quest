@@ -104,6 +104,15 @@ Legend: ⬜ Not started | 🔄 In progress | ✅ Done
 - ✅ **CONT-14** Replace Mailhog with authenticated SMTP (IONOS, STARTTLS on port 587)
 - ⬜ **CONT-15** Expand user and household management: User who registers on website becomes admin for a new household which they name. They can then send email invites to others who will be added as standard members of that household. Ask me if clarification is required on how this should work.
 - ⬜ **CONT-16** Improve security all round: Network level, access control, application level and infrastructure.
+
+---
+
+## Debugging
+
+Known bugs to investigate and fix. Not yet scheduled into a phase.
+
+- ⬜ **BUG-01** Tasks not always apportioning points correctly. Example: "Tidy living room" should award 10 points; UI reports 15 but the actual total is 35.
+
 ---
 
 ## Notes for Claude Code sessions
