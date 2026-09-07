@@ -9,7 +9,7 @@ from app.models.gamification import UserBadge
 from app.models.household import Household
 from app.models.task import Completion, Task, TaskInstance
 from app.models.user import User
-from app.services.challenges import ensure_today_challenge_ids, generate_daily_challenges
+from app.services.challenges import generate_daily_challenges
 from app.services.email import send_email
 from app.services.scoring import build_score_breakdown
 from app.services.streaks import calculate_current_streak, completion_local_date
@@ -130,13 +130,13 @@ def _build_weekly_context(db: Session, household: Household) -> dict:
                     }
                 )
 
-    ensure_today_challenge_ids(db, household)
-    challenges = generate_daily_challenges(db, household.id, today)
     challenge_tasks = []
-    for challenge in challenges:
-        task = db.get(Task, challenge.task_id)
-        if task is not None:
-            challenge_tasks.append(task.name)
+    if household.daily_challenges_enabled:
+        challenges = generate_daily_challenges(db, household.id, today)
+        for challenge in challenges:
+            task = db.get(Task, challenge.task_id)
+            if task is not None:
+                challenge_tasks.append(task.name)
 
     return {
         "household_name": household.name,

@@ -18,6 +18,9 @@ scheduler = BackgroundScheduler()
 def _run_daily_challenges(household_id: int) -> None:
     db = SessionLocal()
     try:
+        household = db.get(Household, household_id)
+        if household is None or not household.daily_challenges_enabled:
+            return
         generate_daily_challenges(db, household_id)
         db.commit()
         logger.info("Generated daily challenges for household %s", household_id)

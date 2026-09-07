@@ -16,7 +16,9 @@ router = APIRouter(tags=["gamification"])
 
 
 class WeeklyGoalUpdate(BaseModel):
-    points_target: int = Field(ge=1)
+    points_target: int | None = Field(default=None, ge=1)
+    daily_challenges_enabled: bool | None = None
+    daily_challenge_count: int | None = Field(default=None, ge=1, le=5)
 
 
 @router.get("/challenges/today")
@@ -48,7 +50,19 @@ def update_goals(
     db: Session = Depends(get_db),
 ):
     try:
-        return set_weekly_goal(db, admin, body.points_target)
+        if (
+            body.points_target is None
+            and body.daily_challenges_enabled is None
+            and body.daily_challenge_count is None
+        ):
+            raise HTTPException(status_code=400, detail="No settings to update")
+        return set_weekly_goal(
+            db,
+            admin,
+            body.points_target,
+            daily_challenges_enabled=body.daily_challenges_enabled,
+            daily_challenge_count=body.daily_challenge_count,
+        )
     except GoalError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message)
 

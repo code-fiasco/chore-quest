@@ -7,6 +7,11 @@ from app.models.gamification import Leaderboard, PeriodType, WeeklyGoal
 from app.models.household import Household
 from app.models.user import User
 from app.services.scoring import _DueTasksCache, build_score_breakdown
+from app.services.challenges import (
+    MAX_DAILY_CHALLENGE_COUNT,
+    MIN_DAILY_CHALLENGE_COUNT,
+    clear_daily_challenges_for_date,
+)
 from app.services.tasks import household_today
 
 
@@ -132,21 +137,58 @@ def get_weekly_goal(db: Session, user: User) -> dict:
 
     return {
         "points_target": goal.points_target if goal else None,
+        "daily_challenges_enabled": household.daily_challenges_enabled,
+        "daily_challenge_count": household.daily_challenge_count,
         "members": progress,
     }
 
 
-def set_weekly_goal(db: Session, user: User, points_target: int) -> dict:
-    if points_target < 1:
-        raise GoalError("Weekly goal must be at least 1 point")
+def set_weekly_goal(
+    db: Session,
+    user: User,
+    points_target: int | None = None,
+    *,
+    daily_challenges_enabled: bool | None = None,
+    daily_challenge_count: int | None = None,
+) -> dict:
+    household = db.get(Household, user.household_id)
+    if household is None:
+        raise GoalError("Household not found", status_code=404)
 
-    goal = db.scalar(select(WeeklyGoal).where(WeeklyGoal.household_id == user.household_id))
-    if goal is None:
-        goal = WeeklyGoal(household_id=user.household_id, points_target=points_target)
-        db.add(goal)
-    else:
-        goal.points_target = points_target
+    regenerate_today_challenges = False
+
+    if points_target is not None:
+        if points_target < 1:
+            raise GoalError("Weekly goal must be at least 1 point")
+
+        goal = db.scalar(
+            select(WeeklyGoal).where(WeeklyGoal.household_id == user.household_id)
+        )
+        if goal is None:
+            goal = WeeklyGoal(household_id=user.household_id, points_target=points_target)
+            db.add(goal)
+        else:
+            goal.points_target = points_target
+
+    if daily_challenges_enabled is not None:
+        if daily_challenges_enabled and not household.daily_challenges_enabled:
+            regenerate_today_challenges = True
+        household.daily_challenges_enabled = daily_challenges_enabled
+
+    if daily_challenge_count is not None:
+        if not MIN_DAILY_CHALLENGE_COUNT <= daily_challenge_count <= MAX_DAILY_CHALLENGE_COUNT:
+            raise GoalError(
+                f"Daily challenge count must be between "
+                f"{MIN_DAILY_CHALLENGE_COUNT} and {MAX_DAILY_CHALLENGE_COUNT}"
+            )
+        if daily_challenge_count != household.daily_challenge_count:
+            regenerate_today_challenges = True
+        household.daily_challenge_count = daily_challenge_count
+
+    if regenerate_today_challenges and household.daily_challenges_enabled:
+        clear_daily_challenges_for_date(
+            db, household.id, household_today(household)
+        )
 
     db.commit()
-    db.refresh(goal)
     return get_weekly_goal(db, user)

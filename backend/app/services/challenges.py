@@ -1,7 +1,7 @@
 import random
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.gamification import DailyChallenge
@@ -10,8 +10,15 @@ from app.models.task import Completion, Task, TaskInstance
 from app.models.user import User
 from app.services.tasks import ensure_current_instance, household_today
 
-CHALLENGE_COUNT = 3
 CHALLENGE_BONUS_PERCENT = 0.50
+MIN_DAILY_CHALLENGE_COUNT = 1
+MAX_DAILY_CHALLENGE_COUNT = 5
+DEFAULT_DAILY_CHALLENGE_COUNT = 3
+
+
+def daily_challenges_enabled(db: Session, household_id: int) -> bool:
+    household = db.get(Household, household_id)
+    return household is not None and household.daily_challenges_enabled
 
 
 class ChallengeError(Exception):
@@ -24,6 +31,8 @@ class ChallengeError(Exception):
 def get_challenge_task_ids(
     db: Session, household_id: int, challenge_date: date
 ) -> set[int]:
+    if not daily_challenges_enabled(db, household_id):
+        return set()
     rows = db.scalars(
         select(DailyChallenge.task_id).where(
             DailyChallenge.household_id == household_id,
@@ -48,6 +57,9 @@ def generate_daily_challenges(
     if household is None:
         raise ChallengeError("Household not found", status_code=404)
 
+    if not household.daily_challenges_enabled:
+        return []
+
     target_date = challenge_date or household_today(household)
 
     existing = db.scalars(
@@ -67,7 +79,7 @@ def generate_daily_challenges(
     if not tasks:
         return []
 
-    count = min(CHALLENGE_COUNT, len(tasks))
+    count = min(household.daily_challenge_count, len(tasks))
     selected = random.sample(tasks, count)
 
     challenges = [
@@ -81,6 +93,17 @@ def generate_daily_challenges(
     db.add_all(challenges)
     db.flush()
     return challenges
+
+
+def clear_daily_challenges_for_date(
+    db: Session, household_id: int, challenge_date: date
+) -> None:
+    db.execute(
+        delete(DailyChallenge).where(
+            DailyChallenge.household_id == household_id,
+            DailyChallenge.challenge_date == challenge_date,
+        )
+    )
 
 
 def ensure_today_challenges(db: Session, household: Household) -> list[DailyChallenge]:
@@ -132,6 +155,8 @@ def _task_completion_status(
 
 def ensure_today_challenge_ids(db: Session, household: Household) -> set[int]:
     """Ensure today's challenges exist and return their task IDs."""
+    if not household.daily_challenges_enabled:
+        return set()
     today = household_today(household)
     generate_daily_challenges(db, household.id, today)
     return get_challenge_task_ids(db, household.id, today)
@@ -143,6 +168,13 @@ def get_today_challenges(db: Session, user: User) -> dict:
         raise ChallengeError("Household not found", status_code=404)
 
     today = household_today(household)
+    if not household.daily_challenges_enabled:
+        return {
+            "date": today.isoformat(),
+            "enabled": False,
+            "challenges": [],
+        }
+
     challenges = generate_daily_challenges(db, household.id, today)
     db.flush()
 
@@ -156,5 +188,6 @@ def get_today_challenges(db: Session, user: User) -> dict:
     db.commit()
     return {
         "date": today.isoformat(),
+        "enabled": True,
         "challenges": task_items,
     }

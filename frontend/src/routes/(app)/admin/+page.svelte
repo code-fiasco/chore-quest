@@ -13,6 +13,7 @@
 		getGoals,
 		getTasks,
 		masterReset,
+		resetProgress,
 		reorderTasks,
 		setGoals,
 		updateCategory,
@@ -27,7 +28,10 @@
 	let tasks = $state({ daily: [], weekly: [], monthly: [] });
 	let categories = $state([]);
 	let goalTarget = $state(100);
+	let dailyChallengesEnabled = $state(true);
+	let dailyChallengeCount = $state(3);
 	let resetOpen = $state(false);
+	let progressResetOpen = $state(false);
 
 	let showTaskForm = $state(false);
 	let editingTask = $state(null);
@@ -80,6 +84,8 @@
 			tasks = taskData;
 			categories = catData;
 			goalTarget = goalData.points_target ?? 100;
+			dailyChallengesEnabled = goalData.daily_challenges_enabled ?? true;
+			dailyChallengeCount = goalData.daily_challenge_count ?? 3;
 			if (!editingTask && !showTaskForm) {
 				taskForm.category_id = categories[0]?.id ?? 1;
 			}
@@ -173,8 +179,12 @@
 
 	async function saveGoal() {
 		try {
-			await setGoals(Number(goalTarget));
-			toast.success('Weekly goal updated');
+			await setGoals({
+				points_target: Number(goalTarget),
+				daily_challenges_enabled: dailyChallengesEnabled,
+				daily_challenge_count: Number(dailyChallengeCount)
+			});
+			toast.success('Game settings updated');
 		} catch (err) {
 			toast.error(err.message);
 		}
@@ -184,6 +194,16 @@
 		try {
 			await masterReset();
 			toast.success('Household reset complete');
+			await loadAll();
+		} catch (err) {
+			toast.error(err.message);
+		}
+	}
+
+	async function handleProgressReset() {
+		try {
+			await resetProgress();
+			toast.success('Progress and points cleared');
 			await loadAll();
 		} catch (err) {
 			toast.error(err.message);
@@ -352,27 +372,91 @@
 		{/each}
 	</div>
 {:else if tab === 'goals'}
-	<div class="rounded-xl border border-quest-border bg-quest-surface-2 p-4">
-		<label for="goal-target" class="block text-sm text-quest-muted">Weekly points target</label>
-		<input id="goal-target" type="number" min="1" class="mt-2 min-h-11 w-full rounded-xl border border-quest-border bg-quest-bg px-3" bind:value={goalTarget} />
-		<button type="button" class="mt-3 min-h-11 w-full rounded-xl bg-quest-purple font-semibold text-white" onclick={saveGoal}>Save goal</button>
+	<div class="space-y-4">
+		<div class="rounded-xl border border-quest-border bg-quest-surface-2 p-4">
+			<label for="goal-target" class="block text-sm text-quest-muted">Weekly points target</label>
+			<input id="goal-target" type="number" min="1" class="mt-2 min-h-11 w-full rounded-xl border border-quest-border bg-quest-bg px-3" bind:value={goalTarget} />
+		</div>
+
+		<div class="rounded-xl border border-quest-border bg-quest-surface-2 p-4">
+			<div class="flex items-start justify-between gap-4">
+				<div>
+					<p class="font-medium text-quest-text">Daily challenges</p>
+					<p class="mt-1 text-sm text-quest-muted">
+						Random tasks highlighted each day with a 50% point bonus. Turn this off to show all tasks in the regular lists only.
+					</p>
+				</div>
+				<label class="flex shrink-0 items-center gap-2">
+					<input
+						type="checkbox"
+						class="h-5 w-5 rounded border-quest-border"
+						bind:checked={dailyChallengesEnabled}
+					/>
+					<span class="text-sm text-quest-muted">{dailyChallengesEnabled ? 'On' : 'Off'}</span>
+				</label>
+			</div>
+
+			{#if dailyChallengesEnabled}
+				<label for="challenge-count" class="mt-4 block text-sm text-quest-muted">
+					Number of daily challenges
+				</label>
+				<select
+					id="challenge-count"
+					class="mt-2 min-h-11 w-full rounded-xl border border-quest-border bg-quest-bg px-3"
+					bind:value={dailyChallengeCount}
+				>
+					{#each [1, 2, 3, 4, 5] as count}
+						<option value={count}>{count}</option>
+					{/each}
+				</select>
+			{/if}
+		</div>
+
+		<button type="button" class="min-h-11 w-full rounded-xl bg-quest-purple font-semibold text-white" onclick={saveGoal}>
+			Save settings
+		</button>
 	</div>
 {:else}
-	<div class="rounded-xl border border-red-500/30 bg-red-500/10 p-4">
-		<h3 class="font-semibold text-red-200">Master reset</h3>
-		<p class="mt-2 text-sm text-red-200/80">
-			This permanently deletes all tasks, completions, badges, and leaderboard data for your household. This cannot be undone.
-		</p>
-		<button type="button" class="mt-4 min-h-11 w-full rounded-xl bg-red-600 font-semibold text-white" onclick={() => (resetOpen = true)}>
-			Reset household
-		</button>
+	<div class="space-y-4">
+		<div class="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4">
+			<h3 class="font-semibold text-orange-200">Clear progress</h3>
+			<p class="mt-2 text-sm text-orange-200/80">
+				Removes all completions, points, badges, streaks, and leaderboard scores. Your tasks, categories, and weekly goal target stay as they are.
+			</p>
+			<button
+				type="button"
+				class="mt-4 min-h-11 w-full rounded-xl bg-orange-600 font-semibold text-white"
+				onclick={() => (progressResetOpen = true)}
+			>
+				Clear progress and points
+			</button>
+		</div>
+
+		<div class="rounded-xl border border-red-500/30 bg-red-500/10 p-4">
+			<h3 class="font-semibold text-red-200">Master reset</h3>
+			<p class="mt-2 text-sm text-red-200/80">
+				Permanently deletes all tasks, completions, badges, leaderboard data, and weekly goals for your household. Categories and user accounts are kept. This cannot be undone.
+			</p>
+			<button type="button" class="mt-4 min-h-11 w-full rounded-xl bg-red-600 font-semibold text-white" onclick={() => (resetOpen = true)}>
+				Reset everything
+			</button>
+		</div>
 	</div>
 {/if}
 
 <ConfirmDialog
+	bind:open={progressResetOpen}
+	title="Clear progress?"
+	message="This will delete all completions, points, badges, and scores. Your tasks will not be changed."
+	confirmLabel="Clear progress"
+	danger
+	onconfirm={handleProgressReset}
+/>
+
+<ConfirmDialog
 	bind:open={resetOpen}
 	title="Master reset?"
-	message="This will permanently delete all tasks, completions, badges, and scores. This cannot be undone."
+	message="This will permanently delete all tasks, completions, badges, scores, and weekly goals. This cannot be undone."
 	confirmLabel="Reset everything"
 	danger
 	onconfirm={handleReset}

@@ -885,11 +885,12 @@ def check_and_award_badges(
         award("Double Trouble")
 
     challenge_ids = get_challenge_task_ids(db, household.id, local_date)
-    challenge_completions_today = sum(
-        1 for _, challenge_task, _ in day_completions if challenge_task.id in challenge_ids
-    )
-    if challenge_completions_today >= 3:
-        award("Hat Trick Hero")
+    if challenge_ids:
+        challenge_completions_today = sum(
+            1 for _, challenge_task, _ in day_completions if challenge_task.id in challenge_ids
+        )
+        if challenge_completions_today >= len(challenge_ids):
+            award("Hat Trick Hero")
 
     if local_time >= datetime.time(23, 0):
         award("Night Owl")

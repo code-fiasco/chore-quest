@@ -206,10 +206,18 @@ export function getGoals() {
 	return request('/goals');
 }
 
-export function setGoals(points_target) {
+export function setGoals({ points_target, daily_challenges_enabled, daily_challenge_count } = {}) {
+	const body = {};
+	if (points_target != null) body.points_target = points_target;
+	if (daily_challenges_enabled != null) {
+		body.daily_challenges_enabled = daily_challenges_enabled;
+	}
+	if (daily_challenge_count != null) {
+		body.daily_challenge_count = daily_challenge_count;
+	}
 	return request('/goals', {
 		method: 'PUT',
-		body: JSON.stringify({ points_target })
+		body: JSON.stringify(body)
 	});
 }
 
@@ -220,4 +228,8 @@ export function getStats() {
 
 export function masterReset() {
 	return request('/admin/reset', { method: 'POST' });
+}
+
+export function resetProgress() {
+	return request('/admin/reset/progress', { method: 'POST' });
 }
